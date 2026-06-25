@@ -1,21 +1,19 @@
-"""Utilities for optimal transport independent component analysis."""
-
-from __future__ import annotations
-
-import numpy as np
-from scipy.special import ndtri
+import torch
 
 
-def gauss_quantiles(n: int) -> np.ndarray:
-    """Computes optimal equally weighted standard-normal quantiles.
+def gauss_quantiles(n: int) -> torch.Tensor:
+    """Computes equally weighted standard-normal quantiles.
 
     Args:
         n (int): Number of quantile bins.
 
     Returns:
-        np.ndarray: Mean standard-normal quantile in each bin.
+        torch.Tensor: Mean standard-normal quantile in each bin.
     """
-    z = ndtri(np.linspace(0.0, 1.0, n + 1))
-    phi = np.exp(-0.5 * z**2) / np.sqrt(2.0 * np.pi)
-    phi[[0, -1]] = 0.0
+    z = torch.special.ndtri(torch.linspace(0.0, 1.0, n + 1, dtype=torch.float64))
+    phi = torch.exp(-0.5 * z.square()) / torch.sqrt(
+        torch.tensor(2.0 * torch.pi, dtype=torch.float64)
+    )
+    phi[0] = 0.0
+    phi[-1] = 0.0
     return n * (phi[:-1] - phi[1:])

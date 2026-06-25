@@ -1,167 +1,76 @@
-from __future__ import annotations
-
 import numpy as np
-from scipy.linalg import expm
+import torch
+from torch.nn.utils import parametrizations
 
 
 class LBFGSMixin:
-    """Provides a parameter-driven Riemannian L-BFGS solver."""
+    """Provides a torch-based orthogonal L-BFGS solver."""
 
+    lr: float
     max_iter: int
-    memory: int
-    tol: float
-    initial_step: float
-    contraction: float
-    sufficient_increase: float
-    max_line_search_steps: int
-    curvature_tol: float
-    gradient_tol: float
-
-    def _objective(self, sources: np.ndarray, quantiles: np.ndarray) -> float:
-        """Computes the total squared Wasserstein non-Gaussianity."""
-        differences = np.sort(sources, axis=1) - quantiles
-        return float(np.mean(differences**2, axis=1).sum())
-
-    def _relative_gradient(
-        self,
-        sources: np.ndarray,
-        quantiles: np.ndarray,
-    ) -> np.ndarray:
-        """Computes the relative gradient on the orthogonal group."""
-        n_samples = sources.shape[1]
-        order = np.argsort(sources, axis=1)
-        ranks = np.empty_like(order)
-        np.put_along_axis(ranks, order, np.arange(n_samples)[None, :], axis=1)
-        scores = (2.0 / n_samples) * (sources - quantiles[ranks])
-        gradient = scores @ sources.T
-        return 0.5 * (gradient - gradient.T)
-
-    def _direction(
-        self,
-        gradient: np.ndarray,
-        history: tuple[list[np.ndarray], list[np.ndarray], list[float]],
-    ) -> np.ndarray:
-        """Computes an L-BFGS direction with identity vector transport."""
-        steps, differences, inverse_curvatures = history
-        direction = gradient.copy()
-        coefficients: list[float] = []
-
-        for step, difference, inverse_curvature in zip(
-            reversed(steps),
-            reversed(differences),
-            reversed(inverse_curvatures),
-            strict=True,
-        ):
-            coefficient = inverse_curvature * float(np.sum(step * direction))
-            coefficients.append(coefficient)
-            direction -= coefficient * difference
-
-        if differences:
-            difference = differences[-1]
-            scale = float(
-                np.sum(steps[-1] * difference) / np.sum(difference * difference)
-            )
-            direction *= scale
-
-        for step, difference, inverse_curvature, coefficient in zip(
-            steps,
-            differences,
-            inverse_curvatures,
-            reversed(coefficients),
-            strict=True,
-        ):
-            correction = inverse_curvature * float(np.sum(difference * direction))
-            direction += (coefficient - correction) * step
-
-        return direction
-
-    def _armijo(
-        self,
-        rotation: np.ndarray,
-        direction: np.ndarray,
-        objective: float,
-        slope: float,
-        X: np.ndarray,
-        quantiles: np.ndarray,
-    ) -> tuple[np.ndarray, np.ndarray, float, float] | None:
-        """Returns the first update satisfying the Armijo condition."""
-        step = self.initial_step
-        for _ in range(self.max_line_search_steps):
-            candidate_rotation = expm(step * direction) @ rotation
-            candidate_sources = candidate_rotation @ X
-            candidate_objective = self._objective(candidate_sources, quantiles)
-            if (
-                candidate_objective
-                >= objective + self.sufficient_increase * step * slope
-            ):
-                return (
-                    candidate_rotation,
-                    candidate_sources,
-                    candidate_objective,
-                    step,
-                )
-            step *= self.contraction
-        return None
+    history_size: int
+    tolerance_grad: float
+    tolerance_change: float
+    orthogonal_map: str
 
     def _solve(
         self,
         X: np.ndarray,
-        quantiles: np.ndarray,
-        rotation: np.ndarray,
-    ) -> tuple[np.ndarray, int]:
-        """Maximizes Wasserstein non-Gaussianity by Riemannian L-BFGS."""
-        X = X.T
-        sources = rotation @ X
-        gradient = self._relative_gradient(sources, quantiles)
-        objective = self._objective(sources, quantiles)
-        history: tuple[list[np.ndarray], list[np.ndarray], list[float]] = ([], [], [])
+        quantiles: torch.Tensor,
+        init_: np.ndarray,
+    ) -> tuple[np.ndarray, int, float]:
+        """Maximizes Wasserstein non-Gaussianity with torch L-BFGS.
 
-        n_iter = 0
-        while n_iter < self.max_iter:
-            n_iter += 1
-            direction = self._direction(gradient, history)
-            slope = float(np.sum(gradient * direction))
-            if slope <= 0.0:
-                direction = gradient
-                slope = float(np.sum(gradient * gradient))
-            if slope < self.curvature_tol:
-                break
+        Args:
+            X (np.ndarray): Whitened observations arranged by feature.
+            quantiles (torch.Tensor): Reference Gaussian quantiles for each sample.
+            init_ (np.ndarray): Initial orthogonal unmixing matrix.
 
-            update = self._armijo(
-                rotation,
-                direction,
-                objective,
-                slope,
-                X,
-                quantiles,
-            )
-            if update is None:
-                break
+        Returns:
+            tuple[np.ndarray, int, float]: Final orthogonal unmixing matrix, number of
+            iterations performed, and final objective value.
+        """
+        X = torch.as_tensor(X, dtype=torch.float64)
+        n_components = X.shape[1]
 
-            new_rotation, new_sources, new_objective, step_size = update
-            new_gradient = self._relative_gradient(new_sources, quantiles)
-            step = step_size * direction
-            difference = gradient - new_gradient
-            curvature = float(np.sum(step * difference))
+        module = torch.nn.Linear(
+            n_components,
+            n_components,
+            bias=False,
+            dtype=torch.float64,
+        )
+        module.weight.data = torch.as_tensor(init_, dtype=torch.float64)
+        parametrizations.orthogonal(
+            module,
+            "weight",
+            orthogonal_map=self.orthogonal_map,
+        )
 
-            if curvature > self.curvature_tol:
-                steps, differences, inverse_curvatures = history
-                steps.append(step)
-                differences.append(difference)
-                inverse_curvatures.append(1.0 / curvature)
-                if len(steps) > self.memory:
-                    steps.pop(0)
-                    differences.pop(0)
-                    inverse_curvatures.pop(0)
+        optimizer = torch.optim.LBFGS(
+            module.parameters(),
+            lr=self.lr,
+            max_iter=self.max_iter,
+            history_size=self.history_size,
+            tolerance_grad=self.tolerance_grad,
+            tolerance_change=self.tolerance_change,
+            line_search_fn="strong_wolfe",
+        )
 
-            relative_gain = (new_objective - objective) / (
-                abs(objective) + self.curvature_tol
-            )
-            rotation = new_rotation
-            sources = new_sources
-            gradient = new_gradient
-            objective = new_objective
-            if relative_gain < self.tol or np.linalg.norm(gradient) < self.gradient_tol:
-                break
+        def closure() -> torch.Tensor:
+            optimizer.zero_grad()
+            sources = X @ module.weight.T
+            differences = torch.sort(sources, dim=0).values - quantiles[:, None]
+            loss = -differences.square().mean(dim=0).sum()
+            loss.backward()
+            return loss
 
-        return rotation, n_iter
+        optimizer.step(closure)
+
+        state = optimizer.state[optimizer.param_groups[0]["params"][0]]
+        n_iter = int(state.get("n_iter", self.max_iter))
+        with torch.no_grad():
+            sources = X @ module.weight.T
+            differences = torch.sort(sources, dim=0).values - quantiles[:, None]
+            objective = float(differences.square().mean(dim=0).sum().item())
+
+        return module.weight.detach().cpu().numpy(), n_iter, objective
