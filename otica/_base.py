@@ -53,7 +53,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         {
             "n_components": [Interval(Integral, 1, None, closed="left"), None],
             "init": [StrOptions({"fastica", "identity", "random"})],
-            "orthogonal_map": [StrOptions({"matrix_exp", "cayley"})],
+            "orthogonal_map": [StrOptions({"matrix_exp", "cayley", "householder"})],
             "lr": [Interval(Real, 0.0, None, closed="neither")],
             "max_iter": [Interval(Integral, 1, None, closed="left")],
             "history_size": [Interval(Integral, 1, None, closed="left")],
