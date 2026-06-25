@@ -17,14 +17,14 @@ class LBFGSMixin:
         self,
         X: np.ndarray,
         quantiles: torch.Tensor,
-        init_: np.ndarray,
+        init_unmixing_: np.ndarray,
     ) -> tuple[np.ndarray, int, float]:
         """Maximizes Wasserstein non-Gaussianity with torch L-BFGS.
 
         Args:
             X (np.ndarray): Whitened observations arranged by feature.
             quantiles (torch.Tensor): Reference Gaussian quantiles for each sample.
-            init_ (np.ndarray): Initial orthogonal unmixing matrix.
+            init_unmixing_ (np.ndarray): Initial orthogonal unmixing matrix.
 
         Returns:
             tuple[np.ndarray, int, float]: Final orthogonal unmixing matrix, number of
@@ -39,7 +39,7 @@ class LBFGSMixin:
             bias=False,
             dtype=torch.float64,
         )
-        module.weight.data = torch.as_tensor(init_, dtype=torch.float64)
+        module.weight.data = torch.as_tensor(init_unmixing_, dtype=torch.float64)
         parametrizations.orthogonal(
             module,
             "weight",
