@@ -16,4 +16,5 @@ def gauss_quantiles(n: int) -> torch.Tensor:
     )
     phi[0] = 0.0
     phi[-1] = 0.0
+    
     return n * (phi[:-1] - phi[1:])
