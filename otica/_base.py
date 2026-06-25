@@ -155,6 +155,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
             random_state=rng,
         ).fit(X)
         left, _, right = np.linalg.svd(estimator.components_, full_matrices=False)
+
         return left @ right
 
     @validate_params(
