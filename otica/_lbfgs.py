@@ -62,6 +62,7 @@ class LBFGSMixin:
             differences = torch.sort(sources, dim=0).values - quantiles[:, None]
             loss = -differences.square().mean(dim=0).sum()
             loss.backward()
+            
             return loss
 
         optimizer.step(closure)
