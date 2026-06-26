@@ -99,25 +99,25 @@ class LBFGSMixin:
             direction (np.ndarray): Proposed skew-symmetric ascent direction.
 
         Returns:
-            tuple[float, float, np.ndarray]: Step size, next objective value, and next
+            tuple[float, float, np.ndarray]: Step size, new objective value, and new
                 orthogonal unmixing matrix.
         """
         derivative = np.sum(grad * direction)
         step = 1.0
 
         for _ in range(self.max_line_search_steps):
-            next_unmixing = expm(step * direction) @ unmixing
-            next_objective, _ = self._objective_and_grad(
-                next_unmixing,
+            new_unmixing = expm(step * direction) @ unmixing
+            new_objective, _ = self._objective_and_grad(
+                new_unmixing,
                 X,
                 quantiles,
             )
 
             if (
-                next_objective
+                new_objective
                 >= objective + self.armijo_min_increase * step * derivative
             ):
-                return step, next_objective, next_unmixing
+                return step, new_objective, new_unmixing
 
             step *= 0.5
 
@@ -155,7 +155,7 @@ class LBFGSMixin:
                 direction = grad
                 history.clear()
 
-            step, next_objective, next_unmixing = self._line_search(
+            step, new_objective, new_unmixing = self._line_search(
                 unmixing,
                 X,
                 quantiles,
@@ -166,20 +166,20 @@ class LBFGSMixin:
             if step == 0.0:
                 break
 
-            _, next_grad = self._objective_and_grad(next_unmixing, X, quantiles)
+            _, new_grad = self._objective_and_grad(new_unmixing, X, quantiles)
             step_delta = step * direction
-            grad_delta = grad - next_grad
+            grad_delta = grad - new_grad
             curvature = np.sum(step_delta * grad_delta)
 
             if curvature > np.finfo(np.float64).eps:
                 history.append((step_delta, grad_delta, 1.0 / curvature))
                 history = history[-self.history_size :]
 
-            norm = np.linalg.norm(next_unmixing - unmixing)
+            norm = np.linalg.norm(new_unmixing - unmixing)
 
-            unmixing = next_unmixing
-            grad = next_grad
-            objective = next_objective
+            unmixing = new_unmixing
+            grad = new_grad
+            objective = new_objective
 
             if norm <= self.tol:
                 break
