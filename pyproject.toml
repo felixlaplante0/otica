@@ -4,7 +4,7 @@ description = "Optimal Transport Independent Component Analysis"
 readme = "README.md"
 authors = [{ name = "Félix Laplante" }]
 requires-python = ">=3.11"
-dependencies = ["numpy", "scikit-learn", "torch"]
+dependencies = ["numpy", "scipy", "scikit-learn"]
 dynamic = ["version"]
 classifiers = [
     "Development Status :: 3 - Alpha",

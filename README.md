@@ -4,7 +4,7 @@
 
 ## Installation
 
-The package depends on `numpy`, `scikit-learn`, and `torch`.
+The package depends on `numpy`, `scipy`, and `scikit-learn`.
 
 ```bash
 pip install .

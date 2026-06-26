@@ -1,38 +1,47 @@
 from numbers import Integral, Real
-from typing import Self, cast
+from typing import Self
 
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.decomposition import FastICA
 from sklearn.utils._param_validation import Interval, StrOptions, validate_params
-from sklearn.utils.validation import check_is_fitted, check_random_state, validate_data
+from sklearn.utils.validation import (
+    check_array,
+    check_is_fitted,
+    check_random_state,
+    validate_data,
+)
 
 from ._lbfgs import LBFGSMixin
 from ._utils import gauss_quantiles
 
 
 class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
-    """Optimal transport ICA using Riemannian L-BFGS.
+    """Optimal transport ICA using orthogonal L-BFGS.
 
     The estimator whitens the observations and maximizes the sum of empirical squared
     Wasserstein distances between the recovered components and a standard Gaussian.
-    Optimization uses torch L-BFGS with an orthogonal parametrization of the unmixing
-    matrix.
+    Optimization uses an L-BFGS approximation on the orthogonal group.
 
     The estimator supports an optional rank reduction step through `n_components`.
     When `n_components` is smaller than the ambient dimension, the whitening matrix
     becomes rectangular and the optimization runs in the reduced component space.
 
-    Torch L-BFGS behavior is controlled by `orthogonal_map`, `lr`, `max_iter`,
-    `history_size`, `tolerance_grad`, and `tolerance_change`.
+    Optimization behavior is controlled by `max_iter`, `history_size`, `tol`,
+    `max_line_search_steps`, and `armijo_min_increase`.
 
     Attributes:
         n_components (int | None): Number of retained components before fitting.
-        n_components_ (int): Number of retained components after fitting.
+        init (str): Initialization method.
+        max_iter (int): Maximum L-BFGS iterations.
+        history_size (int): Maximum number of L-BFGS correction pairs.
+        tol (float): Convergence tolerance.
+        max_line_search_steps (int): Maximum Armijo backtracking steps.
+        armijo_min_increase (float): Armijo sufficient increase constant.
+        random_state (int | None): Random seed.
         mean_ (np.ndarray): Feature means removed during fitting.
         whitening_ (np.ndarray): Whitening matrix used to project onto the reduced
             component space.
-        unmixing_ (np.ndarray): Orthogonal unmixing matrix in the whitened space.
         components_ (np.ndarray): Estimated unmixing matrix.
         mixing_ (np.ndarray): Pseudo-inverse of the unmixing matrix.
         objective_ (float): Final optimized objective value.
@@ -40,25 +49,29 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
     """
 
     n_components: int | None
+    init: str
+    max_iter: int
+    history_size: int
+    tol: float
+    max_line_search_steps: int
+    armijo_min_increase: float
+    random_state: int | None
     mean_: np.ndarray
     whitening_: np.ndarray
-    unmixing_: np.ndarray
     components_: np.ndarray
     mixing_: np.ndarray
     objective_: float
     n_iter_: int
-    n_components_: int
 
     @validate_params(
         {
             "n_components": [Interval(Integral, 1, None, closed="left"), None],
             "init": [StrOptions({"fastica", "identity", "random"})],
-            "orthogonal_map": [StrOptions({"matrix_exp", "cayley", "householder"})],
-            "lr": [Interval(Real, 0.0, None, closed="neither")],
             "max_iter": [Interval(Integral, 1, None, closed="left")],
             "history_size": [Interval(Integral, 1, None, closed="left")],
-            "tolerance_grad": [Interval(Real, 0.0, None, closed="left")],
-            "tolerance_change": [Interval(Real, 0.0, None, closed="left")],
+            "tol": [Interval(Real, 0.0, None, closed="left")],
+            "max_line_search_steps": [Interval(Integral, 1, None, closed="left")],
+            "armijo_min_increase": [Interval(Real, 0.0, 1.0, closed="neither")],
             "random_state": ["random_state"],
         },
         prefer_skip_nested_validation=True,
@@ -67,12 +80,11 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         self,
         n_components: int | None = None,
         init: str = "fastica",
-        orthogonal_map: str = "matrix_exp",
-        lr: float = 1.0,
         max_iter: int = 200,
-        history_size: int = 100,
-        tolerance_grad: float = 1e-7,
-        tolerance_change: float = 1e-9,
+        history_size: int = 10,
+        tol: float = 1e-5,
+        max_line_search_steps: int = 20,
+        armijo_min_increase: float = 1e-4,
         random_state: int | None = None,
     ):
         """Initializes the OTICA model.
@@ -81,25 +93,23 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
             n_components (int | None, optional): Number of retained components.
                 Defaults to None.
             init (str, optional): Initialization method. Defaults to `"fastica"`.
-            orthogonal_map (str, optional): Orthogonal parametrization used by torch
-                L-BFGS. Defaults to `"matrix_exp"`.
-            lr (float, optional): Torch L-BFGS learning rate. Defaults to 1.0.
             max_iter (int, optional): Maximum L-BFGS iterations. Defaults to 200.
-            history_size (int, optional): Torch L-BFGS history size. Defaults to 100.
-            tolerance_grad (float, optional): Torch L-BFGS gradient tolerance.
-                Defaults to 1e-7.
-            tolerance_change (float, optional): Torch L-BFGS change tolerance.
-                Defaults to 1e-9.
+            history_size (int, optional): Maximum number of L-BFGS correction pairs.
+                Defaults to 10.
+            tol (float, optional): Convergence tolerance. Defaults to 1e-5.
+            max_line_search_steps (int, optional): Maximum Armijo backtracking steps.
+                Defaults to 20.
+            armijo_min_increase (float, optional): Armijo sufficient increase constant.
+                Defaults to 1e-4.
             random_state (int | None, optional): Random seed. Defaults to None.
         """
         self.n_components = n_components
         self.init = init
-        self.orthogonal_map = orthogonal_map
-        self.lr = lr
         self.max_iter = max_iter
         self.history_size = history_size
-        self.tolerance_grad = tolerance_grad
-        self.tolerance_change = tolerance_change
+        self.tol = tol
+        self.max_line_search_steps = max_line_search_steps
+        self.armijo_min_increase = armijo_min_increase
         self.random_state = random_state
 
     def _whiten(
@@ -179,25 +189,23 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         Returns:
             Self: The fitted estimator.
         """
-        X = cast(
-            np.ndarray,
-            validate_data(self, X, dtype=np.float64, ensure_min_samples=2),
-        )
+        X = validate_data(self, X, ensure_min_samples=2)
+
+        n = X.shape[0]
 
         n_components = X.shape[1] if self.n_components is None else self.n_components
-        n_components = min(n_components, X.shape[1], X.shape[0] - 1)
+        n_components = min(n_components, X.shape[1], n - 1)
 
-        self.n_components_ = n_components
         whitened, self.mean_, self.whitening_ = self._whiten(X, n_components)
         rng = check_random_state(self.random_state)
         init_unmixing = self._init_unmixing(whitened, rng)
 
-        self.unmixing_, self.n_iter_, self.objective_ = self._solve(
+        unmixing, self.n_iter_, self.objective_ = self._solve(
             whitened,
-            gauss_quantiles(X.shape[0]),
+            gauss_quantiles(n),
             init_unmixing,
         )
-        self.components_ = self.unmixing_ @ self.whitening_
+        self.components_ = unmixing @ self.whitening_
         self.mixing_ = np.linalg.pinv(self.components_)
 
         return self
@@ -218,10 +226,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
             np.ndarray: Recovered independent components.
         """
         check_is_fitted(self, ["components_"])
-        X = cast(
-            np.ndarray,
-            validate_data(self, X, dtype=np.float64, reset=False),
-        )
+        X = validate_data(self, X, reset=False)
 
         return (X - self.mean_) @ self.components_.T
 
@@ -241,9 +246,6 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
             np.ndarray: Reconstructed observations in the original feature space.
         """
         check_is_fitted(self, ["mixing_", "mean_"])
-        X = cast(
-            np.ndarray,
-            validate_data(self, X, dtype=np.float64, reset=False),
-        )
+        X = check_array(X)  # type: ignore
 
         return X @ self.mixing_.T + self.mean_

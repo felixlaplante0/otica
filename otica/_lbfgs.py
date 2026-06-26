@@ -1,77 +1,187 @@
 import numpy as np
-import torch
-from torch.nn.utils import parametrizations
+from scipy.linalg import expm
 
 
 class LBFGSMixin:
-    """Provides a torch-based orthogonal L-BFGS solver."""
+    """Provides a minimal orthogonal L-BFGS solver."""
 
-    lr: float
     max_iter: int
     history_size: int
-    tolerance_grad: float
-    tolerance_change: float
-    orthogonal_map: str
+    tol: float
+    max_line_search_steps: int
+    armijo_min_increase: float
+
+    def _objective_and_grad(
+        self,
+        unmixing: np.ndarray,
+        X: np.ndarray,
+        quantiles: np.ndarray,
+    ) -> tuple[float, np.ndarray]:
+        """Computes the objective and its tangent gradient.
+
+        Args:
+            unmixing (np.ndarray): Current orthogonal unmixing matrix.
+            X (np.ndarray): Whitened observations.
+            quantiles (np.ndarray): Standard-normal reference quantiles.
+
+        Returns:
+            tuple[float, np.ndarray]: Wasserstein objective and skew-symmetric tangent
+                gradient in exponential coordinates.
+        """
+        n = X.shape[0]
+
+        sources = X @ unmixing.T
+        order = np.argsort(sources, axis=0)
+        residual = np.take_along_axis(sources, order, axis=0) - quantiles[:, None]
+
+        score_grad = np.empty_like(residual)
+        np.put_along_axis(score_grad, order, 2.0 * residual / n, axis=0)
+
+        euclidean_grad = score_grad.T @ X
+        raw_grad = euclidean_grad @ unmixing.T
+
+        return np.sum(residual * residual) / n, 0.5 * (raw_grad - raw_grad.T)
+
+    def _direction(
+        self,
+        grad: np.ndarray,
+        history: list[tuple[np.ndarray, np.ndarray, float]],
+    ) -> np.ndarray:
+        """Computes the L-BFGS ascent direction.
+
+        Args:
+            grad (np.ndarray): Current tangent gradient.
+            history (list[tuple[np.ndarray, np.ndarray, float]]): Stored correction
+                pairs and inverse inner products.
+
+        Returns:
+            np.ndarray: Skew-symmetric ascent direction.
+        """
+        direction = grad.copy()
+        step_weights = []
+
+        for step_delta, grad_delta, inverse_curvature in reversed(history):
+            step_weight = inverse_curvature * np.sum(step_delta * direction)
+            step_weights.append(step_weight)
+            direction -= step_weight * grad_delta
+
+        if history:
+            step_delta, grad_delta, _ = history[-1]
+            direction *= np.sum(step_delta * grad_delta) / np.sum(grad_delta**2)
+
+        for (step_delta, grad_delta, inverse_curvature), step_weight in zip(
+            history,
+            reversed(step_weights),
+            strict=True,
+        ):
+            grad_weight = inverse_curvature * np.sum(grad_delta * direction)
+            direction += step_delta * (step_weight - grad_weight)
+
+        return direction
+
+    def _line_search(
+        self,
+        unmixing: np.ndarray,
+        X: np.ndarray,
+        quantiles: np.ndarray,
+        objective: float,
+        grad: np.ndarray,
+        direction: np.ndarray,
+    ) -> tuple[float, float, np.ndarray]:
+        """Finds an Armijo step for objective maximization.
+
+        Args:
+            unmixing (np.ndarray): Current orthogonal unmixing matrix.
+            X (np.ndarray): Whitened observations.
+            quantiles (np.ndarray): Standard-normal reference quantiles.
+            objective (float): Current objective value.
+            grad (np.ndarray): Current tangent gradient.
+            direction (np.ndarray): Proposed skew-symmetric ascent direction.
+
+        Returns:
+            tuple[float, float, np.ndarray]: Step size, next objective value, and next
+                orthogonal unmixing matrix.
+        """
+        derivative = np.sum(grad * direction)
+        step = 1.0
+
+        for _ in range(self.max_line_search_steps):
+            next_unmixing = expm(step * direction) @ unmixing
+            next_objective, _ = self._objective_and_grad(
+                next_unmixing,
+                X,
+                quantiles,
+            )
+
+            if (
+                next_objective
+                >= objective + self.armijo_min_increase * step * derivative
+            ):
+                return step, next_objective, next_unmixing
+
+            step *= 0.5
+
+        return 0.0, objective, unmixing
 
     def _solve(
         self,
         X: np.ndarray,
-        quantiles: torch.Tensor,
-        init_unmixing_: np.ndarray,
+        quantiles: np.ndarray,
+        init_unmixing: np.ndarray,
     ) -> tuple[np.ndarray, int, float]:
-        """Maximizes Wasserstein non-Gaussianity with torch L-BFGS.
+        """Maximizes Wasserstein non-Gaussianity over orthogonal matrices.
 
         Args:
-            X (np.ndarray): Whitened observations arranged by feature.
-            quantiles (torch.Tensor): Reference Gaussian quantiles for each sample.
-            init_unmixing_ (np.ndarray): Initial orthogonal unmixing matrix.
+            X (np.ndarray): Whitened observations.
+            quantiles (np.ndarray): Standard-normal reference quantiles.
+            init_unmixing (np.ndarray): Initial orthogonal unmixing matrix.
 
         Returns:
-            tuple[np.ndarray, int, float]: Final orthogonal unmixing matrix, number of
-            iterations performed, and final objective value.
+            tuple[np.ndarray, int, float]: Final unmixing matrix, number of iterations,
+                and final objective value.
         """
-        X = torch.as_tensor(X, dtype=torch.float64)
-        n_components = X.shape[1]
+        unmixing = init_unmixing.copy()
+        history: list[tuple[np.ndarray, np.ndarray, float]] = []
+        objective, grad = self._objective_and_grad(unmixing, X, quantiles)
+        n_iter = 0
 
-        module = torch.nn.Linear(
-            n_components,
-            n_components,
-            bias=False,
-            dtype=torch.float64,
-        )
-        module.weight.data = torch.as_tensor(init_unmixing_, dtype=torch.float64)
-        parametrizations.orthogonal(
-            module,
-            "weight",
-            orthogonal_map=self.orthogonal_map,
-        )
+        for _ in range(self.max_iter):
+            n_iter += 1
+            if np.max(np.abs(grad)) <= self.tol:
+                break
 
-        optimizer = torch.optim.LBFGS(
-            module.parameters(),
-            lr=self.lr,
-            max_iter=self.max_iter,
-            history_size=self.history_size,
-            tolerance_grad=self.tolerance_grad,
-            tolerance_change=self.tolerance_change,
-            line_search_fn="strong_wolfe",
-        )
+            direction = self._direction(grad, history)
+            if np.sum(grad * direction) <= 0.0:
+                direction = grad
+                history.clear()
 
-        def closure() -> torch.Tensor:
-            optimizer.zero_grad()
-            sources = X @ module.weight.T
-            differences = torch.sort(sources, dim=0).values - quantiles[:, None]
-            loss = -differences.square().mean(dim=0).sum()
-            loss.backward()
-            
-            return loss
+            step, next_objective, next_unmixing = self._line_search(
+                unmixing,
+                X,
+                quantiles,
+                objective,
+                grad,
+                direction,
+            )
+            if step == 0.0:
+                break
 
-        optimizer.step(closure)
+            _, next_grad = self._objective_and_grad(next_unmixing, X, quantiles)
+            step_delta = step * direction
+            grad_delta = grad - next_grad
+            curvature = np.sum(step_delta * grad_delta)
 
-        state = optimizer.state[optimizer.param_groups[0]["params"][0]]
-        n_iter = int(state.get("n_iter", self.max_iter))
-        with torch.no_grad():
-            sources = X @ module.weight.T
-            differences = torch.sort(sources, dim=0).values - quantiles[:, None]
-            objective = float(differences.square().mean(dim=0).sum().item())
+            if curvature > np.finfo(np.float64).eps:
+                history.append((step_delta, grad_delta, 1.0 / curvature))
+                history = history[-self.history_size :]
 
-        return module.weight.detach().cpu().numpy(), n_iter, objective
+            norm = np.linalg.norm(next_unmixing - unmixing)
+
+            unmixing = next_unmixing
+            grad = next_grad
+            objective = next_objective
+
+            if norm <= self.tol:
+                break
+
+        return unmixing, n_iter, objective
