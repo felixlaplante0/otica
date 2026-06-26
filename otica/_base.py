@@ -27,6 +27,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
 
     Attributes:
         n_components (int | None): Number of retained components before fitting.
+        whiten (bool): Whether to whiten the data before fitting.
         init (str): Initialization method.
         max_iter (int): Maximum L-BFGS iterations.
         history_size (int): Maximum number of L-BFGS correction pairs.
@@ -44,6 +45,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
     """
 
     n_components: int | None
+    whiten: bool
     init: str
     max_iter: int
     history_size: int
@@ -61,7 +63,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
     @validate_params(
         {
             "n_components": [Interval(Integral, 1, None, closed="left"), None],
-            "init": [StrOptions({"fastica", "identity", "random"})],
+            "init": [StrOptions({"fastica", "random"})],
             "max_iter": [Interval(Integral, 1, None, closed="left")],
             "history_size": [Interval(Integral, 1, None, closed="left")],
             "tol": [Interval(Real, 0.0, None, closed="left")],
@@ -74,6 +76,8 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
     def __init__(
         self,
         n_components: int | None = None,
+        *,
+        whiten: bool = True,
         init: str = "fastica",
         max_iter: int = 200,
         history_size: int = 10,
@@ -87,6 +91,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         Args:
             n_components (int | None, optional): Number of retained components.
                 Defaults to None.
+            whiten (bool, optional): Whether to whiten the data. Defaults to True.
             init (str, optional): Initialization method. Defaults to `"fastica"`.
             max_iter (int, optional): Maximum L-BFGS iterations. Defaults to 200.
             history_size (int, optional): Maximum number of L-BFGS correction pairs.
@@ -99,6 +104,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
             random_state (int | None, optional): Random seed. Defaults to None.
         """
         self.n_components = n_components
+        self.whiten = whiten
         self.init = init
         self.max_iter = max_iter
         self.history_size = history_size
@@ -150,10 +156,10 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         Returns:
             np.ndarray: Initial orthogonal unmixing matrix.
         """
-        if self.init == "identity":
-            return np.eye(X.shape[1])
+        d = X.shape[1]
+
         if self.init == "random":
-            return np.linalg.qr(rng.standard_normal((X.shape[1], X.shape[1])))[0]
+            return np.linalg.qr(rng.standard_normal((d, d)))[0]
 
         estimator = FastICA(
             whiten=False,
@@ -186,12 +192,16 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         """
         X = validate_data(self, X)  # type: ignore
 
-        n = X.shape[0]
+        n, d = X.shape
 
-        n_components = X.shape[1] if self.n_components is None else self.n_components
-        n_components = min(n_components, X.shape[1], n - 1)
+        n_components = d if self.n_components is None else self.n_components
 
-        whitened, self.mean_, self.whitening_ = self._whiten(X, n_components)
+        if self.whiten:
+            whitened, self.mean_, self.whitening_ = self._whiten(X, n_components)
+        else:
+            whitened = X
+            self.mean_ = X.mean(axis=0)
+
         rng = check_random_state(self.random_state)
         init_unmixing = self._init_unmixing(whitened, rng)
 
@@ -200,7 +210,8 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
             gauss_quantiles(n),
             init_unmixing,
         )
-        self.components_ = unmixing @ self.whitening_
+
+        self.components_ = unmixing @ self.whitening_ if self.whiten else unmixing
         self.mixing_ = np.linalg.pinv(self.components_)
 
         return self
