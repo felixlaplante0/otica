@@ -10,22 +10,22 @@ def rot(t):
     return np.array([[c, -s], [s, c]])
 
 
-def gen_data(n=5000, seed=0):
+def gen_data(n, seed=0):
     rng = np.random.default_rng(seed)
     return rng.choice([0.0, 3.0, -3.0], size=(n, 2), p=[8 / 9, 1 / 18, 1 / 18])
 
 
-def logcosh(x):
-    return np.logaddexp(x, -x) - np.log(2.0)
+def logcosh(X):
+    return np.logaddexp(X, -X) - np.log(2.0)
 
 
-x = gen_data()
+X = gen_data(500)
 
 thetas = np.linspace(0, np.pi / 4, 2001)
-scores = np.array([logcosh(x @ rot(t).T).sum(axis=1).mean() for t in thetas])
+scores = np.array([logcosh(X @ rot(t).T).sum(axis=1).mean() for t in thetas])
 w_argmax = rot(thetas[np.argmax(scores)])
 
-otica = OTICA(n_components=2, random_state=0, init="random", whiten=False).fit(x)
+otica = OTICA(n_components=2, random_state=0, init="random", whiten=False).fit(X)
 w_otica = otica.components_
 
 fig, ax = plt.subplots(figsize=(5, 5))
