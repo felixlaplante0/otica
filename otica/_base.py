@@ -5,12 +5,7 @@ import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.decomposition import FastICA
 from sklearn.utils._param_validation import Interval, StrOptions, validate_params
-from sklearn.utils.validation import (
-    check_array,
-    check_is_fitted,
-    check_random_state,
-    validate_data,
-)
+from sklearn.utils.validation import check_is_fitted, check_random_state, validate_data
 
 from ._lbfgs import LBFGSMixin
 from ._utils import gauss_quantiles
