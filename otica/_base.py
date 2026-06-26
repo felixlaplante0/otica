@@ -197,18 +197,15 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         n_components = d if self.n_components is None else self.n_components
 
         if self.whiten:
-            whitened, self.mean_, self.whitening_ = self._whiten(X, n_components)
+            X, self.mean_, self.whitening_ = self._whiten(X, n_components)
         else:
-            whitened = X
             self.mean_ = X.mean(axis=0)
 
         rng = check_random_state(self.random_state)
-        init_unmixing = self._init_unmixing(whitened, rng)
+        init_unmixing = self._init_unmixing(X, rng)
 
         unmixing, self.n_iter_, self.objective_ = self._solve(
-            whitened,
-            gauss_quantiles(n),
-            init_unmixing,
+            X, gauss_quantiles(n), init_unmixing
         )
 
         self.components_ = unmixing @ self.whitening_ if self.whiten else unmixing
