@@ -189,7 +189,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         Returns:
             Self: The fitted estimator.
         """
-        X = validate_data(self, X, ensure_min_samples=2)
+        X = validate_data(self, X)  # type: ignore
 
         n = X.shape[0]
 
@@ -226,7 +226,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
             np.ndarray: Recovered independent components.
         """
         check_is_fitted(self, ["components_"])
-        X = validate_data(self, X, reset=False)
+        X = validate_data(self, X, reset=False)  # type: ignore
 
         return (X - self.mean_) @ self.components_.T
 
@@ -246,6 +246,6 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
             np.ndarray: Reconstructed observations in the original feature space.
         """
         check_is_fitted(self, ["mixing_", "mean_"])
-        X = check_array(X)  # type: ignore
+        X = validate_data(self, X, reset=False)  # type: ignore
 
         return X @ self.mixing_.T + self.mean_
