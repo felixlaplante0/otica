@@ -144,7 +144,7 @@ class LBFGSMixin:
         history: list[tuple[np.ndarray, np.ndarray, float]] = []
         objective, grad = self._objective_and_grad(unmixing, X, quantiles)
 
-        for n_iter in range(1, self.max_iter + 1):
+        for n_iter in range(1, self.max_iter + 1):  # noqa: B007
             if np.max(np.abs(grad)) <= self.tol:
                 break
 

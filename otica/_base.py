@@ -1,11 +1,19 @@
 from numbers import Integral, Real
-from typing import Self
+from typing import Self, cast
 
 import numpy as np
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.decomposition import FastICA
-from sklearn.utils._param_validation import Interval, StrOptions, validate_params
-from sklearn.utils.validation import check_is_fitted, check_random_state, validate_data
+from sklearn.base import BaseEstimator, TransformerMixin  # type: ignore
+from sklearn.decomposition import FastICA  # type: ignore
+from sklearn.utils._param_validation import (  # type: ignore
+    Interval,  # type: ignore
+    StrOptions,  # type: ignore
+    validate_params,  # type: ignore
+)
+from sklearn.utils.validation import (  # type: ignore
+    check_is_fitted,  # type: ignore
+    check_random_state,  # type: ignore
+    validate_data,  # type: ignore
+)
 
 from ._lbfgs import LBFGSMixin
 from ._utils import gauss_quantiles
@@ -190,7 +198,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         Returns:
             Self: The fitted estimator.
         """
-        X = validate_data(self, X)  # type: ignore
+        X = cast(np.ndarray, validate_data(self, X))  # type: ignore
 
         n, d = X.shape
 
@@ -229,7 +237,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
             np.ndarray: Recovered independent components.
         """
         check_is_fitted(self, ["components_"])
-        X = validate_data(self, X, reset=False)  # type: ignore
+        X = cast(np.ndarray, validate_data(self, X, reset=False))  # type: ignore
 
         return (X - self.mean_) @ self.components_.T
 
@@ -249,6 +257,6 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
             np.ndarray: Reconstructed observations in the original feature space.
         """
         check_is_fitted(self, ["mixing_", "mean_"])
-        X = validate_data(self, X, reset=False)  # type: ignore
+        X = cast(np.ndarray, validate_data(self, X, reset=False))  # type: ignore
 
         return X @ self.mixing_.T + self.mean_
