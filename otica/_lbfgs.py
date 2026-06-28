@@ -143,10 +143,8 @@ class LBFGSMixin:
         unmixing = init_unmixing.copy()
         history: list[tuple[np.ndarray, np.ndarray, float]] = []
         objective, grad = self._objective_and_grad(unmixing, X, quantiles)
-        n_iter = 0
 
-        for _ in range(self.max_iter):
-            n_iter += 1
+        for n_iter in range(1, self.max_iter + 1):
             if np.max(np.abs(grad)) <= self.tol:
                 break
 
@@ -184,4 +182,4 @@ class LBFGSMixin:
             if norm <= self.tol:
                 break
 
-        return unmixing, n_iter, objective
+        return unmixing, n_iter, objective  # type: ignore
