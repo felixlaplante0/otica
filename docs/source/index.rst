@@ -10,6 +10,7 @@ Features
 - **Exact empirical objective**: Computes the one-dimensional Wasserstein criterion directly from ordered samples and Gaussian quantiles, without density estimation.
 - **Riemannian optimization**: Optimizes the whitened ICA objective on the orthogonal group with a Picard-style limited-memory BFGS method and Armijo backtracking.
 - **Dimension reduction**: Supports extraction of a specified number of components through principal-component whitening.
+- **Flexible initialization**: Accepts FastICA, random, or user-provided initial unmixing matrices through ``w_init``.
 - **scikit-learn integration**: Implements the standard transformer API, including ``fit``, ``transform``, ``fit_transform``, and ``inverse_transform``.
 
 Method
@@ -43,13 +44,12 @@ Install the package from PyPI:
 Usage
 -----
 
-The following example generates three independent non-Gaussian signals, mixes them linearly, and recovers them with ``OTICA``. Because ICA is identifiable only up to permutation and sign, the Hungarian algorithm aligns the estimated components with the true sources before plotting and reporting their absolute correlations.
+The following example generates three independent non-Gaussian signals, mixes them linearly, and recovers them with ``OTICA``. Because ICA is identifiable only up to permutation and sign, recovery is evaluated using the best absolute correlation for each true source.
 
 .. code-block:: python
 
    import matplotlib.pyplot as plt
    import numpy as np
-   from scipy.optimize import linear_sum_assignment
 
    from otica import OTICA
 
@@ -80,38 +80,31 @@ The following example generates three independent non-Gaussian signals, mixes th
    model = OTICA(random_state=42)
    estimated_sources = model.fit_transform(X)
 
-   # Align components for evaluation, resolving ICA's permutation and sign ambiguity.
    correlations = np.corrcoef(sources.T, estimated_sources.T)[:3, 3:]
-   source_indices, estimated_indices = linear_sum_assignment(-np.abs(correlations))
-   aligned_sources = estimated_sources[:, estimated_indices]
-   signs = np.sign(correlations[source_indices, estimated_indices])
-   aligned_sources *= signs
-   scores = np.abs(correlations[source_indices, estimated_indices])
+   best_indices = np.abs(correlations).argmax(axis=1)
+   best_correlations = correlations[np.arange(3), best_indices]
+   recovered_sources = estimated_sources[:, best_indices] * np.sign(best_correlations)
+   print("Best absolute correlation per source:", np.abs(best_correlations))
 
-   print("Absolute correlations:", np.round(scores, 3))
-
-   # Compare a short segment of the standardized true and recovered sources.
-   true_standardized = sources / sources.std(axis=0)
-   estimated_standardized = aligned_sources / aligned_sources.std(axis=0)
-   fig, axes = plt.subplots(3, 1, sharex=True, figsize=(9, 6))
-   for component, ax in enumerate(axes):
-       ax.plot(time[:500], true_standardized[:500, component], label="True", alpha=0.8)
-       ax.plot(
-           time[:500],
-           estimated_standardized[:500, component],
-           label="Recovered",
-           alpha=0.8,
+   fig, axes = plt.subplots(3, 2, sharex=True, figsize=(12, 6))
+   for component in range(3):
+       axes[component, 0].plot(time[:500], sources[:500, component])
+       axes[component, 1].plot(
+           time[:500], recovered_sources[:500, component], color="tab:orange"
        )
-       ax.set_ylabel(f"Source {component + 1}")
-   axes[0].legend()
-   axes[-1].set_xlabel("Time")
+       axes[component, 0].set_ylabel(f"Source {component + 1}")
+
+   axes[0, 0].set_title("True sources")
+   axes[0, 1].set_title("Recovered sources")
+   axes[-1, 0].set_xlabel("Time")
+   axes[-1, 1].set_xlabel("Time")
    fig.tight_layout()
    plt.show()
 
 Configuration
 -------------
 
-The ``init`` parameter selects ``"fastica"`` or ``"random"`` initialization. The L-BFGS iteration count, memory, stopping tolerance, Armijo line search, and random seed are estimator parameters. Scikit-learn utilities such as ``get_params``, ``set_params``, ``clone``, and pipelines therefore handle the complete configuration.
+The ``w_init`` parameter selects ``"fastica"`` or ``"random"`` initialization, or accepts a square array-like initial unmixing matrix whose dimensions match the number of fitted components. The L-BFGS iteration count, memory, stopping tolerance, Armijo line search, and random seed are estimator parameters. Scikit-learn utilities such as ``get_params``, ``set_params``, ``clone``, and pipelines therefore handle the complete configuration.
 
 The empirical objective is nonconvex and piecewise smooth because component ranks change at ties. Different initializations may reach different local optima, and the gradient need not vanish exactly at an order-cell boundary.
 

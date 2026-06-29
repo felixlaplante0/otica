@@ -10,6 +10,7 @@ from sklearn.utils._param_validation import (  # type: ignore
     validate_params,  # type: ignore
 )
 from sklearn.utils.validation import (  # type: ignore
+    check_array,  # type: ignore
     check_is_fitted,  # type: ignore
     check_random_state,  # type: ignore
     validate_data,  # type: ignore
@@ -36,7 +37,8 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
     Attributes:
         n_components (int | None): Number of retained components before fitting.
         whiten (bool): Whether to whiten the data before fitting.
-        init (str): Initialization method.
+        w_init (str | np.typing.ArrayLike): Initialization method or initial unmixing
+            matrix.
         max_iter (int): Maximum L-BFGS iterations.
         history_size (int): Maximum number of L-BFGS correction pairs.
         tol (float): Convergence tolerance.
@@ -54,7 +56,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
 
     n_components: int | None
     whiten: bool
-    init: str
+    w_init: str | np.typing.ArrayLike
     max_iter: int
     history_size: int
     tol: float
@@ -71,7 +73,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
     @validate_params(
         {
             "n_components": [Interval(Integral, 1, None, closed="left"), None],
-            "init": [StrOptions({"fastica", "random"})],
+            "w_init": [StrOptions({"fastica", "random"}), "array-like"],
             "max_iter": [Interval(Integral, 1, None, closed="left")],
             "history_size": [Interval(Integral, 1, None, closed="left")],
             "tol": [Interval(Real, 0.0, None, closed="left")],
@@ -86,7 +88,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         n_components: int | None = None,
         *,
         whiten: bool = True,
-        init: str = "fastica",
+        w_init: str | np.typing.ArrayLike = "fastica",
         max_iter: int = 200,
         history_size: int = 10,
         tol: float = 1e-5,
@@ -100,7 +102,8 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
             n_components (int | None, optional): Number of retained components.
                 Defaults to None.
             whiten (bool, optional): Whether to whiten the data. Defaults to True.
-            init (str, optional): Initialization method. Defaults to `"fastica"`.
+            w_init (str | np.typing.ArrayLike, optional): Initialization method or
+                square initial unmixing matrix. Defaults to `"fastica"`.
             max_iter (int, optional): Maximum L-BFGS iterations. Defaults to 200.
             history_size (int, optional): Maximum number of L-BFGS correction pairs.
                 Defaults to 10.
@@ -113,7 +116,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         """
         self.n_components = n_components
         self.whiten = whiten
-        self.init = init
+        self.w_init = w_init
         self.max_iter = max_iter
         self.history_size = history_size
         self.tol = tol
@@ -166,7 +169,16 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         """
         d = X.shape[1]
 
-        if self.init == "random":
+        if not isinstance(self.w_init, str):
+            w_init = check_array(self.w_init, ensure_2d=True)
+            if w_init.shape != (d, d):
+                raise ValueError(
+                    f"w_init must have shape {(d, d)}, but got {w_init.shape}"
+                )
+
+            return w_init
+
+        if self.w_init == "random":
             return np.linalg.qr(rng.standard_normal((d, d)))[0]
 
         estimator = FastICA(
