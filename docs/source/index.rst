@@ -50,7 +50,6 @@ The following example generates three independent non-Gaussian signals, mixes th
 
    import matplotlib.pyplot as plt
    import numpy as np
-
    from otica import OTICA
 
    rng = np.random.default_rng(42)
