@@ -20,17 +20,17 @@ For observations :math:`X \in \mathbb{R}^{n \times d}`, the linear ICA model ass
 
 .. math::
 
-   X = S A^\mathsf{T},
+   X = S A^\top,
 
 where the columns of :math:`S` are mutually independent latent sources and :math:`A` is an invertible mixing matrix. The sources are identifiable only up to permutation, sign, and scale.
 
-OTICA centers and symmetrically whitens the observations. For each standardized candidate source, it computes the empirical squared 2-Wasserstein distance to a standard Gaussian by matching ordered observations with optimal equally weighted Gaussian quantiles. For whitened observations :math:`Z`, the fitted orthogonal rotation maximizes
+OTICA centers and symmetrically whitens the observations. For whitened observations :math:`Z \in \mathbb{R}^{n \times d}` and an orthogonal unmixing matrix :math:`W \in \mathbb{R}^{d \times d}`, let :math:`Y = Z W^\top` denote the candidate sources. For each component :math:`k`, OTICA sorts the entries of the :math:`k`-th column independently and writes them as :math:`Y_{(1)k} \leq \cdots \leq Y_{(n)k}`. The fitted rotation maximizes
 
 .. math::
 
-   \sum_{k = 1}^{d} \frac{1}{n} \sum_{i = 1}^{n} \left( Y_{k(i)} - q_i \right)^2, \quad Y = W Z^\mathsf{T}, \quad W W^\mathsf{T} = I_d.
+   \sum_{k = 1}^{d} \mathcal{W}_2\left( \frac{1}{n} \sum_{i = 1}^{n} \delta_{Y_{ik}}, \mathcal{N}(0, 1) \right)^2, \quad Y = Z W^\top, \quad W W^\top = I_d.
 
-Here, :math:`Y_{k(i)}` is the :math:`i`-th order statistic of component :math:`k`, and :math:`q_i` is the mean standard-normal quantile over the :math:`i`-th equal-probability interval. Under the usual ICA assumptions, including mutually independent sources with at most one Gaussian component, the population objective identifies the sources up to the unavoidable ambiguities.
+To evaluate each empirical Wasserstein distance exactly, OTICA matches :math:`Y_{(i)k}` with :math:`q_i`, the mean of the standard-normal quantile function over the :math:`i`-th equal-probability interval. Under the usual ICA assumptions, including mutually independent sources with at most one Gaussian component, the population objective identifies the sources up to the unavoidable ambiguities.
 
 Installation
 ------------
