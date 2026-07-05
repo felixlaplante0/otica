@@ -26,7 +26,7 @@ $$
 Given $n$ whitened observations collected as the rows of $Z \in \mathbb{R}^{n \times d}$, let $Y = Z W^\top$. OTICA maximizes
 
 $$
-\widehat{W}_n \in \operatorname*{\arg\max}_{W W^\top = I_d} \widehat{F}_n(W) = \sum_{k = 1}^{d} \mathcal{W}_2\left( \frac{1}{n} \sum_{i = 1}^{n} \delta_{Y_{ik}}, \mathcal{N}(0, 1) \right)^2.
+\widehat{F}_n(W) = \sum_{k = 1}^{d} \mathcal{W}_2\left( \frac{1}{n} \sum_{i = 1}^{n} \delta_{Y_{ik}}, \mathcal{N}(0, 1) \right)^2.
 $$
 
 For each component $k$, the implementation sorts the entries of the $k$-th column as $Y_{(1)k} \leq \cdots \leq Y_{(n)k}$ and matches them with the corresponding standard-Gaussian rank statistics. Under the usual ICA assumptions, including mutually independent sources with at most one Gaussian component, the population objective identifies the sources up to permutation, sign, and scale.
