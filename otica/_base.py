@@ -27,12 +27,22 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
     Wasserstein distances between the recovered components and a standard Gaussian.
     Optimization uses an L-BFGS approximation on the orthogonal group.
 
-    The estimator supports an optional rank reduction step through `n_components`.
-    When `n_components` is smaller than the ambient dimension, the whitening matrix
-    becomes rectangular and the optimization runs in the reduced component space.
+    Data preprocessing settings:
+        - `n_components`: Number of components retained during whitening. When this is
+          smaller than the ambient dimension, optimization runs in the reduced space.
+        - `whiten`: Whether to center and whiten the observations before fitting. When
+          disabled, the observations are assumed to already be whitened.
 
-    Optimization behavior is controlled by `max_iter`, `history_size`, `tol`,
-    `max_line_search_steps`, and `armijo_min_increase`.
+    Initialization settings:
+        - `w_init`: Initialization method or square initial unmixing matrix.
+        - `random_state`: Seed used for random initialization and FastICA.
+
+    Optimization settings:
+        - `max_iter`: Maximum number of L-BFGS iterations.
+        - `history_size`: Maximum number of L-BFGS correction pairs.
+        - `tol`: Convergence tolerance.
+        - `max_line_search_steps`: Maximum number of Armijo backtracking steps.
+        - `armijo_min_increase`: Armijo sufficient increase constant.
 
     Attributes:
         n_components (int | None): Number of retained components before fitting.
@@ -45,12 +55,12 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         max_line_search_steps (int): Maximum Armijo backtracking steps.
         armijo_min_increase (float): Armijo sufficient increase constant.
         random_state (int | None): Random seed.
-        mean_ (np.ndarray): Feature means removed during fitting.
+        mean_ (np.ndarray): Feature means removed during fitting. Available only when
+            `whiten=True`.
         whitening_ (np.ndarray): Whitening matrix used to project onto the reduced
-            component space.
+            component space. Available only when `whiten=True`.
         components_ (np.ndarray): Estimated unmixing matrix.
         mixing_ (np.ndarray): Pseudo-inverse of the unmixing matrix.
-        objective_ (float): Final optimized objective value.
         n_iter_ (int): Number of L-BFGS iterations.
     """
 
@@ -67,7 +77,6 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
     whitening_: np.ndarray
     components_: np.ndarray
     mixing_: np.ndarray
-    objective_: float
     n_iter_: int
 
     @validate_params(
@@ -219,14 +228,13 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         if self.whiten:
             X, self.mean_, self.whitening_ = self._whiten(X, n_components)
         else:
-            self.mean_ = X.mean(axis=0)
+            self.__dict__.pop("mean_", None)
+            self.__dict__.pop("whitening_", None)
 
         rng = check_random_state(self.random_state)
         init_unmixing = self._init_unmixing(X, rng)
 
-        unmixing, self.n_iter_, self.objective_ = self._solve(
-            X, gauss_quantiles(n), init_unmixing
-        )
+        unmixing, self.n_iter_ = self._solve(X, gauss_quantiles(n), init_unmixing)
 
         self.components_ = unmixing @ self.whitening_ if self.whiten else unmixing
         self.mixing_ = np.linalg.pinv(self.components_)
@@ -251,7 +259,10 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         check_is_fitted(self, ["components_"])
         X = cast(np.ndarray, validate_data(self, X, reset=False))  # type: ignore
 
-        return (X - self.mean_) @ self.components_.T
+        if self.whiten:
+            X = X - self.mean_
+
+        return X @ self.components_.T
 
     @validate_params(
         {
@@ -268,7 +279,11 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         Returns:
             np.ndarray: Reconstructed observations in the original feature space.
         """
-        check_is_fitted(self, ["mixing_", "mean_"])
+        check_is_fitted(self, ["mixing_"])
         X = cast(np.ndarray, validate_data(self, X, reset=False))  # type: ignore
 
-        return X @ self.mixing_.T + self.mean_
+        X = X @ self.mixing_.T
+        if self.whiten:
+            X = X + self.mean_
+
+        return X

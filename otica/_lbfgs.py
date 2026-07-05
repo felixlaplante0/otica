@@ -128,7 +128,7 @@ class LBFGSMixin:
         X: np.ndarray,
         quantiles: np.ndarray,
         init_unmixing: np.ndarray,
-    ) -> tuple[np.ndarray, int, float]:
+    ) -> tuple[np.ndarray, int]:
         """Maximizes Wasserstein non-Gaussianity over orthogonal matrices.
 
         Args:
@@ -137,8 +137,7 @@ class LBFGSMixin:
             init_unmixing (np.ndarray): Initial orthogonal unmixing matrix.
 
         Returns:
-            tuple[np.ndarray, int, float]: Final unmixing matrix, number of iterations,
-                and final objective value.
+            tuple[np.ndarray, int]: Final unmixing matrix and number of iterations.
         """
         unmixing = init_unmixing.copy()
         history: list[tuple[np.ndarray, np.ndarray, float]] = []
@@ -182,4 +181,4 @@ class LBFGSMixin:
             if norm <= self.tol:
                 break
 
-        return unmixing, n_iter, objective  # type: ignore
+        return unmixing, n_iter
