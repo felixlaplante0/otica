@@ -7,7 +7,7 @@ import pandas as pd
 import seaborn as sns
 from sklearn.decomposition import FastICA
 from sklearn.exceptions import ConvergenceWarning
-from utils import amari_index, gen_data, gen_t
+from utils import amari_index, gen_data, gen_gaussianity
 
 from otica import OTICA
 
@@ -60,21 +60,21 @@ def nd_results(distribution):
     return pd.DataFrame(results)
 
 
-def heterogeneity_results(condition_number):
+def gaussianity_results(distribution):
     results = []
-    for maximum_df in (2.5, 5, 10, 20, 40):
+    for epsilon in (0.0, 0.05, 0.1, 0.2, 0.4, 0.7, 1.0):
         for run in range(N_RUNS):
-            data, mixing = gen_t(
+            data, mixing = gen_gaussianity(
                 3000,
                 8,
-                np.linspace(2.5, maximum_df, 8),
-                condition_number,
+                distribution,
+                epsilon,
             )
             for name, factory in MODELS.items():
                 model = factory(random_state=run).fit(data)
                 results.append(
                     {
-                        "Value": maximum_df,
+                        "Value": epsilon,
                         "Method": name,
                         "Amari index": amari_index(model.components_, mixing),
                     }
@@ -105,7 +105,7 @@ def plot(axis, results, xlabel, title, legend):
 parser = argparse.ArgumentParser()
 mode = parser.add_mutually_exclusive_group(required=True)
 mode.add_argument("--nd", action="store_true")
-mode.add_argument("--heterogeneity", action="store_true")
+mode.add_argument("--gaussianity", action="store_true")
 args = parser.parse_args()
 
 if args.nd:
@@ -126,17 +126,17 @@ if args.nd:
     output = "../figures/varying-nd-amari-index.pdf"
 else:
     figure, axes = plt.subplots(1, 4, figsize=(28, 5), layout="constrained")
-    figure.suptitle("Amari index under source and mixing-matrix heterogeneity")
-    for column, condition_number in enumerate((1, 2, 3, 4)):
-        results = heterogeneity_results(condition_number)
+    figure.suptitle("Amari index as sources approach Gaussianity")
+    for column, distribution in enumerate(DISTRIBUTIONS):
+        results = gaussianity_results(distribution)
         plot(
             axes[column],
             results,
-            "Maximum degrees of freedom",
-            f"Condition number = {condition_number}",
+            r"$\varepsilon$",
+            distribution,
             column == 0,
         )
-    output = "../figures/mixing-heterogeneity-amari-index.pdf"
+    output = "../figures/gaussianity-amari-index.pdf"
 
 figure.savefig(output)
 plt.show()

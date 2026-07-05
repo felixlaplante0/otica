@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.stats import t
 
 
 def _gen_sources(n: int, d: int, distribution: str) -> np.ndarray:
@@ -31,7 +30,6 @@ def gen_data(
     n: int,
     d: int,
     distribution: str,
-    condition_number: float | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Generates observations from a linear independent component model.
 
@@ -39,48 +37,41 @@ def gen_data(
         n (int): Number of observations.
         d (int): Number of sources and observed variables.
         distribution (str): Source distribution name.
-        condition_number (float | None, optional): Mixing-matrix condition number.
-            A Gaussian mixing matrix is used when this is `None`. Defaults to `None`.
 
     Returns:
         tuple[np.ndarray, np.ndarray]: Observations and mixing matrix.
     """
     mixing = np.random.normal(size=(d, d))
-    if condition_number is not None:
-        left, _, right = np.linalg.svd(mixing)
-        mixing = left @ np.diag(np.linspace(1.0, condition_number, d)) @ right
 
     return _gen_sources(n, d, distribution) @ mixing.T, mixing
 
 
-def gen_t(
+def gen_gaussianity(
     n: int,
     d: int,
-    dfs: np.typing.ArrayLike,
-    condition_number: float,
+    distribution: str,
+    epsilon: float,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Generates ICA observations with heterogeneously scaled Student-t sources.
+    """Generates ICA observations with sources approaching Gaussianity.
 
     Args:
         n (int): Number of observations.
         d (int): Number of sources and observed variables.
-        dfs (np.typing.ArrayLike): Degrees of freedom for the sources.
-        condition_number (float): Mixing-matrix condition number.
+        distribution (str): Non-Gaussian source distribution name.
+        epsilon (float): Gaussian contribution between zero and one.
 
     Returns:
         tuple[np.ndarray, np.ndarray]: Observations and mixing matrix.
     """
-    dfs = np.asarray(dfs)
-    scales = np.random.uniform(0.5, 2.0, size=d)
-    noise = (
-        np.column_stack([t.rvs(df, size=n) / np.sqrt(df / (df - 2)) for df in dfs])
-        * scales
-    )
+    non_gaussian = _gen_sources(n, d, distribution)
+    if distribution == "Exponential":
+        non_gaussian -= 1.0
+    sources = np.sqrt(1.0 - epsilon) * non_gaussian + np.sqrt(
+        epsilon
+    ) * np.random.normal(size=(n, d))
     mixing = np.random.normal(size=(d, d))
-    left, _, right = np.linalg.svd(mixing)
-    mixing = left @ np.diag(np.linspace(1.0, condition_number, d)) @ right
 
-    return noise @ mixing.T, mixing
+    return sources @ mixing.T, mixing
 
 
 def amari_index(unmixing: np.ndarray, mixing: np.ndarray) -> float:
