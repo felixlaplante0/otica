@@ -1,5 +1,6 @@
 import argparse
 import warnings
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,6 +29,7 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 # Set defaults
 np.random.seed(42)
+ROOT = Path(__file__).resolve().parents[1]
 MODELS = {"OT-ICA": OTICA, "FastICA": FastICA}
 DISTRIBUTIONS = ("Laplace", "Uniform", "Exponential", "Discrete")
 N_RUNS = 20
@@ -123,7 +125,7 @@ if args.nd:
                 distribution,
                 row == 0 and column == 0,
             )
-    output = "../figures/varying-nd-amari-index.pdf"
+    output = ROOT / "figures" / "varying-nd-amari-index.pdf"
 else:
     figure, axes = plt.subplots(1, 4, figsize=(28, 5), layout="constrained")
     figure.suptitle("Amari index as sources approach Gaussianity")
@@ -136,7 +138,7 @@ else:
             distribution,
             column == 0,
         )
-    output = "../figures/gaussianity-amari-index.pdf"
+    output = ROOT / "figures" / "gaussianity-amari-index.pdf"
 
 figure.savefig(output)
 plt.show()
