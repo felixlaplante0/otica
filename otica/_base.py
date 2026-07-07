@@ -280,7 +280,12 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
             np.ndarray: Reconstructed observations in the original feature space.
         """
         check_is_fitted(self, ["mixing_"])
-        X = cast(np.ndarray, validate_data(self, X, reset=False))  # type: ignore
+        X = cast(np.ndarray, check_array(X))  # type: ignore
+        n_components = self.mixing_.shape[1]
+        if X.shape[1] != n_components:
+            raise ValueError(
+                f"X must have {n_components} components, but got {X.shape[1]}."
+            )
 
         X = X @ self.mixing_.T
         if self.whiten:

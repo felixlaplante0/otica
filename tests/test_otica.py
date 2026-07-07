@@ -97,6 +97,24 @@ def test_whiten_dimension():
     assert whitening.shape == (2, 3)
 
 
+def test_component_validation():
+    """Checks feature and component counts in transform methods."""
+    X = np.column_stack([_signals(), np.linspace(-1.0, 1.0, 6)])
+    estimator = OTICA(n_components=2, max_iter=1, w_init=np.eye(2)).fit(X)
+
+    transformed = estimator.transform(X)
+    reconstructed = estimator.inverse_transform(transformed)
+
+    assert transformed.shape == (X.shape[0], 2)
+    assert reconstructed.shape == X.shape
+
+    with pytest.raises(ValueError, match="X has 2 features"):
+        estimator.transform(X[:, :2])
+
+    with pytest.raises(ValueError, match="must have 2 components"):
+        estimator.inverse_transform(X)
+
+
 def test_gradient_direction():
     """Checks objective, gradient, and L-BFGS direction calculations."""
     X = _signals()
