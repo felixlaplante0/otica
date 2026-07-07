@@ -1,11 +1,8 @@
-"""Tests for the otica package."""
-
 import numpy as np
 import pytest
 from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 
-import otica._base as base_module
 from otica import OTICA
 from otica._utils import gauss_quantiles
 
@@ -76,23 +73,9 @@ def test_w_init_shape():
         OTICA(whiten=False, w_init=np.eye(3), max_iter=1).fit(X)
 
 
-def test_fastica_init(monkeypatch):
-    """Checks the FastICA initialization branch with deterministic components."""
+def test_fastica_init():
+    """Checks the FastICA initialization branch."""
     X = _signals()
-
-    class FakeFastICA:
-        """Provides deterministic components for the FastICA initialization path."""
-
-        def __init__(self, *, whiten, random_state):
-            self.whiten = whiten
-            self.random_state = random_state
-
-        def fit(self, _X):
-            self.components_ = np.array([[0.0, 1.0], [1.0, 0.0]])
-
-            return self
-
-    monkeypatch.setattr(base_module, "FastICA", FakeFastICA)
 
     unmixing = OTICA(w_init="fastica")._init_unmixing(
         X,
