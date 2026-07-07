@@ -1,5 +1,7 @@
 # 📊 Contrast-Free ICA
 
+[![codecov](https://codecov.io/gh/felixlaplante0/otica/graph/badge.svg)](https://codecov.io/gh/felixlaplante0/otica)
+
 **otica** is a Python package for linear independent component analysis (ICA) based on optimal transport. It recovers latent sources by maximizing their empirical squared 2-Wasserstein distances to the standard Gaussian, using a fixed non-Gaussianity criterion that requires no user-chosen contrast function or nonlinearity.
 
 ---
@@ -11,7 +13,7 @@
 - **Riemannian optimization**: Optimizes the whitened ICA objective on the orthogonal group with a Picard-style limited-memory BFGS method and Armijo backtracking.
 - **Dimension reduction**: Supports extraction of a specified number of components through principal-component whitening.
 - **Flexible initialization**: Accepts FastICA, random, or user-provided initial unmixing matrices through `w_init`.
-- **scikit-learn integration**: Implements the standard transformer API, including `fit`, `transform`, `fit_transform`, and `inverse_transform`.
+- **scikit-learn integration**: Native `BaseEstimator` integration with the standard transformer API, including `fit`, `transform`, `fit_transform`, and `inverse_transform`.
 
 ---
 

@@ -2,14 +2,16 @@
 name = "otica"
 description = "Optimal Transport Independent Component Analysis"
 readme = "README.md"
+urls = { "Source" = "https://github.com/felixlaplante0/otica" }
 authors = [{ name = "Félix Laplante" }]
 requires-python = ">=3.11"
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
 dependencies = ["numpy", "scipy", "scikit-learn"]
 dynamic = ["version"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Mathematics",
@@ -20,9 +22,10 @@ classifiers = [
 
 [project.optional-dependencies]
 docs = ["furo", "sphinx"]
+test = ["pytest>=8", "pytest-cov>=5"]
 
 [build-system]
-requires = ["setuptools>=42", "setuptools-scm[toml]>=6.0", "wheel"]
+requires = ["setuptools>=77", "setuptools-scm[toml]>=6.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
@@ -32,7 +35,11 @@ packages = ["otica"]
 version_scheme = "post-release"
 local_scheme = "no-local-version"
 
+[tool.setuptools.package-data]
+otica = ["py.typed"]
+
 [tool.ruff]
+extend-exclude = ["scripts"]
 lint.select = [
     "D",   # pydocstyle (docstring conventions)
     "E",   # pycodestyle errors
@@ -57,3 +64,6 @@ lint.ignore = ["D417", "PLR0913"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]
