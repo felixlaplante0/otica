@@ -142,14 +142,15 @@ class LBFGSMixin:
             quantiles (np.ndarray): Standard-normal reference quantiles.
             init_unmixing (np.ndarray): Initial orthogonal unmixing matrix.
         """
-        unmixing = init_unmixing.copy()
+        self.unmixing_ = init_unmixing.copy()
         history: list[tuple[np.ndarray, np.ndarray, float]] = []
-        objective, grad = self._objective_and_grad(unmixing, X, quantiles)
-        converged = False
+        objective, grad = self._objective_and_grad(self.unmixing_, X, quantiles)
+        self.converged_ = False
 
-        for n_iter in range(1, self.max_iter + 1):  # noqa: B007
+        for n_iter in range(1, self.max_iter + 1):
+            self.n_iter_ = n_iter
             if np.max(np.abs(grad)) <= self.tol:
-                converged = True
+                self.converged_ = True
                 break
 
             direction = self._direction(grad, history)
@@ -158,7 +159,7 @@ class LBFGSMixin:
                 history.clear()
 
             step, new_objective, new_unmixing = self._line_search(
-                unmixing,
+                self.unmixing_,
                 X,
                 quantiles,
                 objective,
@@ -177,19 +178,16 @@ class LBFGSMixin:
                 history.append((step_delta, grad_delta, 1.0 / curvature))
                 history = history[-self.history_size :]
 
-            norm = np.linalg.norm(new_unmixing - unmixing)
+            norm = np.linalg.norm(new_unmixing - self.unmixing_)
 
-            unmixing = new_unmixing
+            self.unmixing_ = new_unmixing
             grad = new_grad
             objective = new_objective
 
             if norm <= self.tol:
-                converged = True
+                self.converged_ = True
                 break
 
-        self.unmixing_ = unmixing
-        self.n_iter_ = n_iter
-        self.converged_ = converged
         if not self.converged_:
             warnings.warn(
                 "OTICA did not converge. Consider increasing `max_iter` or `tol`.",
