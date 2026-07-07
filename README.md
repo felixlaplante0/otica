@@ -38,7 +38,7 @@ For each component $k$, the implementation sorts the entries of the $k$-th colum
 ## 🚀 Installation
 
 ```bash
-pip install otica
+python -m pip install otica
 ```
 
 ## 🔧 Usage
