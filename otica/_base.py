@@ -62,6 +62,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         components_ (np.ndarray): Estimated unmixing matrix.
         mixing_ (np.ndarray): Pseudo-inverse of the unmixing matrix.
         n_iter_ (int): Number of L-BFGS iterations.
+        converged_ (bool): Indicator of estimator convergence.
     """
 
     n_components: int | None
