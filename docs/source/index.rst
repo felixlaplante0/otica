@@ -45,7 +45,7 @@ Install the package from PyPI:
 
 .. code-block:: bash
 
-   pip install otica
+   python -m pip install otica
 
 Usage
 -----
@@ -59,7 +59,7 @@ The following example generates three independent non-Gaussian signals, mixes th
    from otica import OTICA
 
    rng = np.random.default_rng(42)
-   n_samples = 5_000
+   n_samples = 5000
    time = np.linspace(0.0, 8.0, n_samples)
 
    # Generate independent, non-Gaussian latent sources.

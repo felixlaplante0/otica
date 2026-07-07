@@ -33,13 +33,20 @@ ROOT = Path(__file__).resolve().parents[1]
 MODELS = {"OT-ICA": OTICA, "FastICA": FastICA}
 DISTRIBUTIONS = ("Laplace", "Uniform", "Exponential", "Discrete")
 N_RUNS = 20
+N_RANGE = (100, 250, 500, 1000, 1500)
+D_RANGE = (5, 10, 15, 20, 30)
+FIXED_N = 1000
+FIXED_D = 7
+GAUSSIANITY_N = 3000
+GAUSSIANITY_D = 8
+EPSILON_RANGE = (0.0, 0.05, 0.1, 0.2, 0.4, 0.7, 1.0)
 
 
 def nd_results(distribution):
     results = []
     for sweep, grid, fixed_n, fixed_d in (
-        ("n", (100, 250, 500, 1000, 1500), None, 7),
-        ("d", (5, 10, 15, 20, 30), 1000, None),
+        ("n", N_RANGE, None, FIXED_D),
+        ("d", D_RANGE, FIXED_N, None),
     ):
         for value in grid:
             for run in range(N_RUNS):
@@ -64,11 +71,11 @@ def nd_results(distribution):
 
 def gaussianity_results(distribution):
     results = []
-    for epsilon in (0.0, 0.05, 0.1, 0.2, 0.4, 0.7, 1.0):
+    for epsilon in EPSILON_RANGE:
         for run in range(N_RUNS):
             data, mixing = gen_gaussianity(
-                3000,
-                8,
+                GAUSSIANITY_N,
+                GAUSSIANITY_D,
                 distribution,
                 epsilon,
             )
@@ -104,41 +111,49 @@ def plot(axis, results, xlabel, title, legend):
     axis.grid(alpha=0.3)
 
 
-parser = argparse.ArgumentParser()
-mode = parser.add_mutually_exclusive_group(required=True)
-mode.add_argument("--nd", action="store_true")
-mode.add_argument("--gaussianity", action="store_true")
-args = parser.parse_args()
+def main():
+    parser = argparse.ArgumentParser()
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--nd", action="store_true")
+    mode.add_argument("--gaussianity", action="store_true")
+    args = parser.parse_args()
 
-if args.nd:
-    figure, axes = plt.subplots(2, 4, figsize=(28, 10), layout="constrained")
-    figure.suptitle("Amari index with varying sample size and dimension")
-    for column, distribution in enumerate(DISTRIBUTIONS):
-        results = nd_results(distribution)
-        for row, (sweep, xlabel) in enumerate(
-            (("n", "n (sample size), d = 7"), ("d", "d (dimension), n = 1000"))
-        ):
+    if args.nd:
+        figure, axes = plt.subplots(2, 4, figsize=(28, 10), layout="constrained")
+        figure.suptitle("Amari index with varying sample size and dimension")
+        for column, distribution in enumerate(DISTRIBUTIONS):
+            results = nd_results(distribution)
+            for row, (sweep, xlabel) in enumerate(
+                (
+                    ("n", f"n (sample size), d = {FIXED_D}"),
+                    ("d", f"d (dimension), n = {FIXED_N}"),
+                )
+            ):
+                plot(
+                    axes[row, column],
+                    results[results["Sweep"] == sweep],
+                    xlabel,
+                    distribution,
+                    row == 0 and column == 0,
+                )
+        output = ROOT / "figures" / "varying-nd-amari-index.pdf"
+    else:
+        figure, axes = plt.subplots(1, 4, figsize=(28, 5), layout="constrained")
+        figure.suptitle("Amari index as sources approach Gaussianity")
+        for column, distribution in enumerate(DISTRIBUTIONS):
+            results = gaussianity_results(distribution)
             plot(
-                axes[row, column],
-                results[results["Sweep"] == sweep],
-                xlabel,
+                axes[column],
+                results,
+                r"$\varepsilon$",
                 distribution,
-                row == 0 and column == 0,
+                column == 0,
             )
-    output = ROOT / "figures" / "varying-nd-amari-index.pdf"
-else:
-    figure, axes = plt.subplots(1, 4, figsize=(28, 5), layout="constrained")
-    figure.suptitle("Amari index as sources approach Gaussianity")
-    for column, distribution in enumerate(DISTRIBUTIONS):
-        results = gaussianity_results(distribution)
-        plot(
-            axes[column],
-            results,
-            r"$\varepsilon$",
-            distribution,
-            column == 0,
-        )
-    output = ROOT / "figures" / "gaussianity-amari-index.pdf"
+        output = ROOT / "figures" / "gaussianity-amari-index.pdf"
 
-figure.savefig(output)
-plt.show()
+    figure.savefig(output)
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()

@@ -53,7 +53,7 @@ import numpy as np
 from otica import OTICA
 
 rng = np.random.default_rng(42)
-n_samples = 5_000
+n_samples = 5000
 time = np.linspace(0.0, 8.0, n_samples)
 
 # Generate independent, non-Gaussian latent sources.
