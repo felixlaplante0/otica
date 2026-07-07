@@ -1,5 +1,8 @@
+import warnings
+
 import numpy as np
 from scipy.linalg import expm
+from sklearn.exceptions import ConvergenceWarning  # type: ignore
 
 
 class LBFGSMixin:
@@ -187,3 +190,9 @@ class LBFGSMixin:
         self.unmixing_ = unmixing
         self.n_iter_ = n_iter
         self.converged_ = converged
+        if not self.converged_:
+            warnings.warn(
+                "OTICA did not converge. Consider increasing `max_iter` or `tol`.",
+                ConvergenceWarning,
+                stacklevel=4,
+            )

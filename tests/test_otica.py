@@ -48,7 +48,7 @@ def test_fit_transform(whiten, w_init, max_iter):
         estimator.transform(X)
 
     assert clone(estimator).get_params()["max_iter"] == max_iter
-    with pytest.warns(ConvergenceWarning, match="OTICA did not converge"):
+    with pytest.warns(ConvergenceWarning, match="`max_iter` or `tol`"):
         assert estimator.fit(X) is estimator
 
     transformed = estimator.transform(X)
@@ -81,7 +81,7 @@ def test_fit_convergence_warning():
     """Checks that fitting warns only when the solver reports non-convergence."""
     X = _signals()
 
-    with pytest.warns(ConvergenceWarning, match="OTICA did not converge"):
+    with pytest.warns(ConvergenceWarning, match="`max_iter` or `tol`"):
         OTICA(whiten=False, w_init=np.eye(2), max_iter=1, tol=0.0).fit(X)
 
     with warnings.catch_warnings(record=True) as caught_warnings:
@@ -122,7 +122,7 @@ def test_whiten_dimension():
 def test_component_validation():
     """Checks feature and component counts in transform methods."""
     X = np.column_stack([_signals(), np.linspace(-1.0, 1.0, 6)])
-    with pytest.warns(ConvergenceWarning, match="OTICA did not converge"):
+    with pytest.warns(ConvergenceWarning, match="`max_iter` or `tol`"):
         estimator = OTICA(n_components=2, max_iter=1, w_init=np.eye(2)).fit(X)
 
     transformed = estimator.transform(X)
@@ -178,7 +178,8 @@ def test_line_search_solver(monkeypatch):
     assert new_unmixing.shape == (2, 2)
 
     monkeypatch.setattr(estimator, "_direction", lambda grad, _history: -grad)
-    estimator._solve(X, quantiles, np.eye(2))
+    with pytest.warns(ConvergenceWarning, match="`max_iter` or `tol`"):
+        estimator._solve(X, quantiles, np.eye(2))
 
     assert estimator.unmixing_.shape == (2, 2)
     assert estimator.n_iter_ >= 1
@@ -224,11 +225,12 @@ def test_solver_stopping(monkeypatch):
         "_line_search",
         lambda *_: (0.0, 0.0, init_unmixing),
     )
-    estimator._solve(
-        X,
-        quantiles,
-        init_unmixing,
-    )
+    with pytest.warns(ConvergenceWarning, match="`max_iter` or `tol`"):
+        estimator._solve(
+            X,
+            quantiles,
+            init_unmixing,
+        )
     assert np.allclose(estimator.unmixing_, init_unmixing)
     assert estimator.n_iter_ == 1
     assert not estimator.converged_
