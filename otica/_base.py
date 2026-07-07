@@ -182,7 +182,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
             w_init = check_array(self.w_init, ensure_2d=True)
             if w_init.shape != (d, d):
                 raise ValueError(
-                    f"w_init must have shape {(d, d)}, but got {w_init.shape}"
+                    f"w_init must have shape {(d, d)}, but got {w_init.shape}."
                 )
 
             return w_init
