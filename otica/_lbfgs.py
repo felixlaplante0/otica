@@ -10,6 +10,9 @@ class LBFGSMixin:
     tol: float
     max_line_search_steps: int
     armijo_min_increase: float
+    unmixing_: np.ndarray
+    n_iter_: int
+    converged_: bool
 
     def _objective_and_grad(
         self,
@@ -128,23 +131,22 @@ class LBFGSMixin:
         X: np.ndarray,
         quantiles: np.ndarray,
         init_unmixing: np.ndarray,
-    ) -> tuple[np.ndarray, int]:
+    ):
         """Maximizes Wasserstein non-Gaussianity over orthogonal matrices.
 
         Args:
             X (np.ndarray): Whitened observations.
             quantiles (np.ndarray): Standard-normal reference quantiles.
             init_unmixing (np.ndarray): Initial orthogonal unmixing matrix.
-
-        Returns:
-            tuple[np.ndarray, int]: Final unmixing matrix and number of iterations.
         """
         unmixing = init_unmixing.copy()
         history: list[tuple[np.ndarray, np.ndarray, float]] = []
         objective, grad = self._objective_and_grad(unmixing, X, quantiles)
+        converged = False
 
         for n_iter in range(1, self.max_iter + 1):  # noqa: B007
             if np.max(np.abs(grad)) <= self.tol:
+                converged = True
                 break
 
             direction = self._direction(grad, history)
@@ -179,6 +181,9 @@ class LBFGSMixin:
             objective = new_objective
 
             if norm <= self.tol:
+                converged = True
                 break
 
-        return unmixing, n_iter
+        self.unmixing_ = unmixing
+        self.n_iter_ = n_iter
+        self.converged_ = converged

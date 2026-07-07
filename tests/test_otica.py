@@ -1,7 +1,9 @@
+import warnings
+
 import numpy as np
 import pytest
 from sklearn.base import clone
-from sklearn.exceptions import NotFittedError
+from sklearn.exceptions import ConvergenceWarning, NotFittedError
 
 from otica import OTICA
 from otica._utils import gauss_quantiles
@@ -46,7 +48,8 @@ def test_fit_transform(whiten, w_init, max_iter):
         estimator.transform(X)
 
     assert clone(estimator).get_params()["max_iter"] == max_iter
-    assert estimator.fit(X) is estimator
+    with pytest.warns(ConvergenceWarning, match="OTICA did not converge"):
+        assert estimator.fit(X) is estimator
 
     transformed = estimator.transform(X)
     reconstructed = estimator.inverse_transform(transformed)
@@ -55,6 +58,7 @@ def test_fit_transform(whiten, w_init, max_iter):
     assert reconstructed.shape == X.shape
     assert estimator.components_.shape == (2, 2)
     assert estimator.mixing_.shape == (2, 2)
+    assert estimator.unmixing_.shape == (2, 2)
     assert estimator.n_iter_ >= 1
 
     if whiten:
@@ -71,6 +75,24 @@ def test_w_init_shape():
 
     with pytest.raises(ValueError, match="w_init must have shape"):
         OTICA(whiten=False, w_init=np.eye(3), max_iter=1).fit(X)
+
+
+def test_fit_convergence_warning():
+    """Checks that fitting warns only when the solver reports non-convergence."""
+    X = _signals()
+
+    with pytest.warns(ConvergenceWarning, match="OTICA did not converge"):
+        OTICA(whiten=False, w_init=np.eye(2), max_iter=1, tol=0.0).fit(X)
+
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        OTICA(whiten=False, w_init=np.eye(2), max_iter=2, tol=1e9).fit(X)
+
+    assert not [
+        warning
+        for warning in caught_warnings
+        if issubclass(warning.category, ConvergenceWarning)
+    ]
 
 
 def test_fastica_init():
@@ -100,7 +122,8 @@ def test_whiten_dimension():
 def test_component_validation():
     """Checks feature and component counts in transform methods."""
     X = np.column_stack([_signals(), np.linspace(-1.0, 1.0, 6)])
-    estimator = OTICA(n_components=2, max_iter=1, w_init=np.eye(2)).fit(X)
+    with pytest.warns(ConvergenceWarning, match="OTICA did not converge"):
+        estimator = OTICA(n_components=2, max_iter=1, w_init=np.eye(2)).fit(X)
 
     transformed = estimator.transform(X)
     reconstructed = estimator.inverse_transform(transformed)
@@ -155,10 +178,11 @@ def test_line_search_solver(monkeypatch):
     assert new_unmixing.shape == (2, 2)
 
     monkeypatch.setattr(estimator, "_direction", lambda grad, _history: -grad)
-    unmixing, n_iter = estimator._solve(X, quantiles, np.eye(2))
+    estimator._solve(X, quantiles, np.eye(2))
 
-    assert unmixing.shape == (2, 2)
-    assert n_iter >= 1
+    assert estimator.unmixing_.shape == (2, 2)
+    assert estimator.n_iter_ >= 1
+    assert not estimator.converged_
 
     def decreasing_objective(_unmixing, _X, _quantiles):
         return objective - 1.0, grad
@@ -184,30 +208,45 @@ def test_solver_stopping(monkeypatch):
     quantiles = gauss_quantiles(X.shape[0])
     init_unmixing = np.eye(2)
 
-    high_tol_estimator = OTICA(whiten=False, max_iter=2, tol=1e9)
-    unmixing, n_iter = high_tol_estimator._solve(X, quantiles, init_unmixing)
-    assert np.allclose(unmixing, init_unmixing)
-    assert n_iter == 1
+    estimator = OTICA(whiten=False, max_iter=2, tol=1e9)
+    estimator._solve(
+        X,
+        quantiles,
+        init_unmixing,
+    )
+    assert np.allclose(estimator.unmixing_, init_unmixing)
+    assert estimator.n_iter_ == 1
+    assert estimator.converged_
 
-    failed_step_estimator = OTICA(whiten=False, max_iter=2, tol=0.0)
+    estimator = OTICA(whiten=False, max_iter=2, tol=0.0)
     monkeypatch.setattr(
-        failed_step_estimator,
+        estimator,
         "_line_search",
         lambda *_: (0.0, 0.0, init_unmixing),
     )
-    unmixing, n_iter = failed_step_estimator._solve(X, quantiles, init_unmixing)
-    assert np.allclose(unmixing, init_unmixing)
-    assert n_iter == 1
+    estimator._solve(
+        X,
+        quantiles,
+        init_unmixing,
+    )
+    assert np.allclose(estimator.unmixing_, init_unmixing)
+    assert estimator.n_iter_ == 1
+    assert not estimator.converged_
 
-    small_update_estimator = OTICA(whiten=False, max_iter=2, tol=0.0)
+    estimator = OTICA(whiten=False, max_iter=2, tol=0.0)
     monkeypatch.setattr(
-        small_update_estimator,
+        estimator,
         "_line_search",
         lambda *_: (1.0, 1.0, init_unmixing),
     )
-    unmixing, n_iter = small_update_estimator._solve(X, quantiles, init_unmixing)
-    assert np.allclose(unmixing, init_unmixing)
-    assert n_iter == 1
+    estimator._solve(
+        X,
+        quantiles,
+        init_unmixing,
+    )
+    assert np.allclose(estimator.unmixing_, init_unmixing)
+    assert estimator.n_iter_ == 1
+    assert estimator.converged_
 
 
 def test_gauss_quantiles():

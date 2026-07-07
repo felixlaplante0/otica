@@ -1,9 +1,11 @@
+import warnings
 from numbers import Integral, Real
 from typing import Self, cast
 
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin  # type: ignore
 from sklearn.decomposition import FastICA  # type: ignore
+from sklearn.exceptions import ConvergenceWarning  # type: ignore
 from sklearn.utils._param_validation import (  # type: ignore
     Interval,  # type: ignore
     StrOptions,  # type: ignore
@@ -234,9 +236,24 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         rng = check_random_state(self.random_state)
         init_unmixing = self._init_unmixing(X, rng)
 
-        unmixing, self.n_iter_ = self._solve(X, gauss_quantiles(n), init_unmixing)
+        self._solve(
+            X,
+            gauss_quantiles(n),
+            init_unmixing,
+        )
+        if not self.converged_:
+            warnings.warn(
+                (
+                    "OTICA did not converge. Consider increasing max_iter or tol, "
+                    "or verify that the data are well conditioned."
+                ),
+                ConvergenceWarning,
+                stacklevel=2,
+            )
 
-        self.components_ = unmixing @ self.whitening_ if self.whiten else unmixing
+        self.components_ = (
+            self.unmixing_ @ self.whitening_ if self.whiten else self.unmixing_
+        )
         self.mixing_ = np.linalg.pinv(self.components_)
 
         return self
