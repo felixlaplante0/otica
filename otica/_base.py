@@ -1,5 +1,5 @@
 from numbers import Integral, Real
-from typing import Self, cast
+from typing import ClassVar, Self, cast
 
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin  # type: ignore
@@ -80,19 +80,18 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
     mixing_: np.ndarray
     n_iter_: int
 
-    @validate_params(
-        {
-            "n_components": [Interval(Integral, 1, None, closed="left"), None],
-            "w_init": [StrOptions({"fastica", "random"}), "array-like"],
-            "max_iter": [Interval(Integral, 1, None, closed="left")],
-            "history_size": [Interval(Integral, 1, None, closed="left")],
-            "tol": [Interval(Real, 0.0, None, closed="left")],
-            "max_line_search_steps": [Interval(Integral, 1, None, closed="left")],
-            "armijo_min_increase": [Interval(Real, 0.0, 1.0, closed="neither")],
-            "random_state": ["random_state"],
-        },
-        prefer_skip_nested_validation=True,
-    )
+    _parameter_constraints: ClassVar[dict] = {
+        "n_components": [Interval(Integral, 1, None, closed="left"), None],
+        "whiten": ["boolean"],
+        "w_init": [StrOptions({"fastica", "random"}), "array-like"],
+        "max_iter": [Interval(Integral, 1, None, closed="left")],
+        "history_size": [Interval(Integral, 1, None, closed="left")],
+        "tol": [Interval(Real, 0.0, None, closed="left")],
+        "max_line_search_steps": [Interval(Integral, 1, None, closed="left")],
+        "armijo_min_increase": [Interval(Real, 0.0, 1.0, closed="neither")],
+        "random_state": ["random_state"],
+    }
+
     def __init__(
         self,
         n_components: int | None = None,
@@ -220,6 +219,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         Returns:
             Self: The fitted estimator.
         """
+        self._validate_params()
         X = cast(np.ndarray, validate_data(self, X))  # type: ignore
 
         n, d = X.shape
