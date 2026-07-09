@@ -1,3 +1,5 @@
+"""Tests for the otica package."""
+
 import warnings
 
 import numpy as np
