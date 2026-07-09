@@ -108,8 +108,8 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         """Initializes the OTICA model.
 
         Args:
-            n_components (int | None, optional): Number of retained components.
-                Defaults to None.
+            n_components (int | None, optional): Number of retained components. Defaults
+                to None.
             whiten (bool, optional): Whether to whiten the data. Defaults to True.
             w_init (str | np.typing.ArrayLike, optional): Initialization method or
                 square initial unmixing matrix. Defaults to ``"fastica"``.
@@ -145,8 +145,8 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
             n_components (int): Number of retained components.
 
         Returns:
-            tuple[np.ndarray, np.ndarray, np.ndarray]: Whitened data, feature means,
-                and the whitening matrix.
+            tuple[np.ndarray, np.ndarray, np.ndarray]: Whitened data, feature means, and
+                the whitening matrix.
         """
         mean = X.mean(axis=0)
         centered = X - mean
