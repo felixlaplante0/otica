@@ -28,21 +28,21 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
     Optimization uses an L-BFGS approximation on the orthogonal group.
 
     Data preprocessing settings:
-        - `n_components`: Number of components retained during whitening. When this is
+        - ``n_components``: Number of components retained during whitening. When this is
           smaller than the ambient dimension, optimization runs in the reduced space.
-        - `whiten`: Whether to center and whiten the observations before fitting. When
+        - ``whiten``: Whether to center and whiten the observations before fitting. When
           disabled, the observations are assumed to already be whitened.
 
     Initialization settings:
-        - `w_init`: Initialization method or square initial unmixing matrix.
-        - `random_state`: Seed used for random initialization and FastICA.
+        - ``w_init``: Initialization method or square initial unmixing matrix.
+        - ``random_state``: Seed used for random initialization and FastICA.
 
     Optimization settings:
-        - `max_iter`: Maximum number of L-BFGS iterations.
-        - `history_size`: Maximum number of L-BFGS correction pairs.
-        - `tol`: Convergence tolerance.
-        - `max_line_search_steps`: Maximum number of Armijo backtracking steps.
-        - `armijo_min_increase`: Armijo sufficient increase constant.
+        - ``max_iter``: Maximum number of L-BFGS iterations.
+        - ``history_size``: Maximum number of L-BFGS correction pairs.
+        - ``tol``: Convergence tolerance.
+        - ``max_line_search_steps``: Maximum number of Armijo backtracking steps.
+        - ``armijo_min_increase``: Armijo sufficient increase constant.
 
     Attributes:
         n_components (int | None): Number of retained components before fitting.
@@ -56,9 +56,9 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
         armijo_min_increase (float): Armijo sufficient increase constant.
         random_state (int | None): Random seed.
         mean_ (np.ndarray): Feature means removed during fitting. Available only when
-            `whiten=True`.
+            ``whiten=True``.
         whitening_ (np.ndarray): Whitening matrix used to project onto the reduced
-            component space. Available only when `whiten=True`.
+            component space. Available only when ``whiten=True``.
         components_ (np.ndarray): Estimated unmixing matrix.
         mixing_ (np.ndarray): Pseudo-inverse of the unmixing matrix.
         n_iter_ (int): Number of L-BFGS iterations.
@@ -112,7 +112,7 @@ class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):
                 Defaults to None.
             whiten (bool, optional): Whether to whiten the data. Defaults to True.
             w_init (str | np.typing.ArrayLike, optional): Initialization method or
-                square initial unmixing matrix. Defaults to `"fastica"`.
+                square initial unmixing matrix. Defaults to ``"fastica"``.
             max_iter (int, optional): Maximum L-BFGS iterations. Defaults to 200.
             history_size (int, optional): Maximum number of L-BFGS correction pairs.
                 Defaults to 10.

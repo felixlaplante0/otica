@@ -12,8 +12,8 @@
 - **Exact empirical objective**: Computes the one-dimensional Wasserstein criterion directly from ordered samples and Gaussian quantiles, without density estimation.
 - **Riemannian optimization**: Optimizes the whitened ICA objective on the orthogonal group with a Picard-style limited-memory BFGS method and Armijo backtracking.
 - **Dimension reduction**: Supports extraction of a specified number of components through principal-component whitening.
-- **Flexible initialization**: Accepts FastICA, random, or user-provided initial unmixing matrices through `w_init`.
-- **scikit-learn integration**: Native `BaseEstimator` integration with the standard transformer API, including `fit`, `transform`, `fit_transform`, and `inverse_transform`.
+- **Flexible initialization**: Accepts FastICA, random, or user-provided initial unmixing matrices through ``w_init``.
+- **scikit-learn integration**: Native ``BaseEstimator`` integration with the standard transformer API, including ``fit``, ``transform``, ``fit_transform``, and ``inverse_transform``.
 
 ---
 
@@ -45,7 +45,7 @@ python -m pip install otica
 
 ### Example
 
-The following example generates three independent non-Gaussian signals, mixes them linearly, and recovers them with `OTICA`. Because ICA is identifiable only up to permutation and sign, recovery is evaluated using the best absolute correlation for each true source.
+The following example generates three independent non-Gaussian signals, mixes them linearly, and recovers them with ``OTICA``. Because ICA is identifiable only up to permutation and sign, recovery is evaluated using the best absolute correlation for each true source.
 
 ```python
 import matplotlib.pyplot as plt
