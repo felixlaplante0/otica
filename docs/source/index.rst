@@ -116,6 +116,7 @@ The empirical objective is nonconvex and piecewise smooth because component rank
 API Reference
 -------------
 
-.. autoclass:: otica.OTICA
-   :members:
-   :show-inheritance:
+.. toctree::
+   :maxdepth: 2
+
+   modules
