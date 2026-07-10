@@ -8,7 +8,7 @@ from sklearn.base import clone
 from sklearn.exceptions import ConvergenceWarning, NotFittedError
 
 from otica import OTICA
-from otica._utils import gauss_quantiles
+from otica.utils._wasserstein import gauss_quantiles
 
 
 def _signals() -> np.ndarray:

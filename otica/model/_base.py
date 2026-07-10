@@ -16,8 +16,8 @@ from sklearn.utils.validation import (  # type: ignore
     validate_data,  # type: ignore
 )
 
+from ..utils._wasserstein import gauss_quantiles
 from ._lbfgs import LBFGSMixin
-from ._utils import gauss_quantiles
 
 
 class OTICA(LBFGSMixin, TransformerMixin, BaseEstimator):

@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from sklearn.decomposition import FastICA
-from utils import gen_data
-
 from otica import OTICA
+from sklearn.decomposition import FastICA
+
+from utils import gen_data
 
 # Set plot parameters
 plt.rcParams.update(

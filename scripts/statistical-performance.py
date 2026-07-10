@@ -6,11 +6,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from otica import OTICA
+from otica.utils import amari_index
 from sklearn.decomposition import FastICA
 from sklearn.exceptions import ConvergenceWarning
-from utils import amari_index, gen_data, gen_gaussianity
 
-from otica import OTICA
+from utils import gen_data, gen_gaussianity
 
 # Set plot parameters
 plt.rcParams.update(
@@ -62,7 +63,7 @@ def nd_results(distribution):
                             "Sweep": sweep,
                             "Value": value,
                             "Method": name,
-                            "Amari index": amari_index(model.components_, mixing),
+                            "Amari index": amari_index(mixing, model.components_),
                         }
                     )
 
@@ -85,7 +86,7 @@ def gaussianity_results(distribution):
                     {
                         "Value": epsilon,
                         "Method": name,
-                        "Amari index": amari_index(model.components_, mixing),
+                        "Amari index": amari_index(mixing, model.components_),
                     }
                 )
 
@@ -145,7 +146,7 @@ def main():
             plot(
                 axes[column],
                 results,
-                r"$\varepsilon$",
+                rf"$\varepsilon$, n = {GAUSSIANITY_N}, d = {GAUSSIANITY_D}",
                 distribution,
                 column == 0,
             )
