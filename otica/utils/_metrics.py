@@ -27,8 +27,7 @@ def amari_index(
 
     if mixing_true_array.shape[0] != mixing_true_array.shape[1]:
         raise ValueError(
-            "mixing_true must be a square array, "
-            f"got shape {mixing_true_array.shape}."
+            f"mixing_true must be a square array, got shape {mixing_true_array.shape}."
         )
     if unmixing_pred_array.shape[0] != unmixing_pred_array.shape[1]:
         raise ValueError(
@@ -54,10 +53,6 @@ def amari_index(
         return 0.0
 
     return float(
-        (
-            np.sum(product / row_maxima)
-            + np.sum(product / column_maxima)
-            - 2 * d
-        )
+        (np.sum(product / row_maxima) + np.sum(product / column_maxima) - 2 * d)
         / (2 * d * (d - 1))
     )
