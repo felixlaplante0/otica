@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from otica.utils import amari_index
+from otica.utils._wasserstein import gauss_quantiles
 
 
 @pytest.mark.parametrize(
@@ -37,3 +38,12 @@ def test_amari_validation(mixing_true, unmixing_pred, message):
     """Rejects matrices that do not define a valid Amari index."""
     with pytest.raises(ValueError, match=message):
         amari_index(mixing_true, unmixing_pred)
+
+
+def test_gauss_quantiles():
+    """Checks basic Gaussian rank-statistic properties."""
+    quantiles = gauss_quantiles(6)
+
+    assert quantiles.shape == (6,)
+    assert np.all(np.diff(quantiles) > 0.0)
+    assert np.isclose(quantiles.mean(), 0.0)

@@ -8,7 +8,6 @@ from sklearn.base import clone
 from sklearn.exceptions import ConvergenceWarning, NotFittedError
 
 from otica import OTICA
-from otica.utils._wasserstein import gauss_quantiles
 
 
 def _signals() -> np.ndarray:
@@ -251,12 +250,3 @@ def test_solver_stopping(monkeypatch):
     assert np.allclose(estimator.unmixing_, init_unmixing)
     assert estimator.n_iter_ == 1
     assert estimator.converged_
-
-
-def test_gauss_quantiles():
-    """Checks basic Gaussian rank-statistic properties."""
-    quantiles = gauss_quantiles(6)
-
-    assert quantiles.shape == (6,)
-    assert np.all(np.diff(quantiles) > 0.0)
-    assert np.isclose(quantiles.mean(), 0.0)

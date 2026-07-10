@@ -19,11 +19,11 @@ def _gen_sources(n: int, d: int, distribution: str) -> np.ndarray:
     if distribution == "Exponential":
         return np.random.exponential(size=(n, d))
 
-    return np.random.choice(
-        (-1.5540997179090625, 0.0, 1.5540997179090625),
-        size=(n, d),
-        p=(0.2070199699025653, 0.5859600601948694, 0.2070199699025653),
-    )
+    sources = np.random.uniform(-np.sqrt(3.0), np.sqrt(3.0), size=(n, d))
+    exponential = np.random.random(size=(n, d)) >= 0.6239786746633258
+    sources[exponential] = np.random.exponential(size=exponential.sum()) - 1.0
+
+    return sources
 
 
 def gen_data(
