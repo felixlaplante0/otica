@@ -11,7 +11,7 @@ from otica.utils import amari_index
 from sklearn.decomposition import FastICA
 from sklearn.exceptions import ConvergenceWarning
 
-from utils import gen_data, gen_gaussianity
+from _utils import gen_data, gen_gaussianity
 
 # Set plot parameters
 plt.rcParams.update(
@@ -32,12 +32,12 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 np.random.seed(42)
 ROOT = Path(__file__).resolve().parents[1]
 MODELS = {"OT-ICA": OTICA, "FastICA": FastICA}
-DISTRIBUTIONS = ("Laplace", "Uniform", "Exponential", "Discrete")
+DISTRIBUTIONS = ("Laplace", "Uniform", "Exponential", "Uniform-Exponential Mixture")
 N_RUNS = 20
 N_RANGE = (100, 250, 500, 1000, 1500)
 D_RANGE = (5, 10, 15, 20, 30)
 FIXED_N = 1000
-FIXED_D = 7
+FIXED_D = 8
 GAUSSIANITY_N = 3000
 GAUSSIANITY_D = 8
 EPSILON_RANGE = (0.0, 0.05, 0.1, 0.2, 0.4, 0.7, 1.0)
@@ -106,7 +106,7 @@ def plot(axis, results, xlabel, title, legend):
         ax=axis,
         legend=legend,
     )
-    axis.set(xlabel=xlabel, ylabel="Amari index", title=title)
+    axis.set(xlabel=xlabel, ylabel="Amari index ↓", title=title)
     if legend:
         axis.legend(loc="upper left")
     axis.grid(alpha=0.3)

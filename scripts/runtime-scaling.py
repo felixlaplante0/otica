@@ -8,7 +8,7 @@ import seaborn as sns
 from otica import OTICA
 from sklearn.decomposition import FastICA
 
-from utils import gen_data
+from _utils import gen_data
 
 # Set plot parameters
 plt.rcParams.update(
@@ -30,7 +30,7 @@ N_RUNS = 20
 N_RANGE = (250, 500, 1000, 2000, 4000)
 D_RANGE = (5, 10, 15, 20, 30)
 FIXED_N = 1000
-FIXED_D = 7
+FIXED_D = 8
 DISTRIBUTION = "Uniform"
 
 
@@ -84,7 +84,7 @@ def main():
             errorbar="sd",
             ax=axis,
         )
-        axis.set(xlabel=xlabel, ylabel="Runtime (seconds)", title=title)
+        axis.set(xlabel=xlabel, ylabel="Runtime (seconds) ↓", title=title)
         axis.legend(loc="upper left")
         axis.set_yscale("log")
         axis.grid(alpha=0.3)
