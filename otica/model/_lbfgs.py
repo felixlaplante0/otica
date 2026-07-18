@@ -93,7 +93,7 @@ class LBFGSMixin:
         objective: float,
         grad: np.ndarray,
         direction: np.ndarray,
-    ) -> tuple[float, float, np.ndarray]:
+    ) -> tuple[float, float, np.ndarray, np.ndarray]:
         """Finds an Armijo step for objective maximization.
 
         Args:
@@ -105,15 +105,15 @@ class LBFGSMixin:
             direction (np.ndarray): Proposed skew-symmetric ascent direction.
 
         Returns:
-            tuple[float, float, np.ndarray]: Step size, new objective value, and new
-                orthogonal unmixing matrix.
+            tuple[float, float, np.ndarray, np.ndarray]: Step size, resulting objective
+                value, tangent gradient, and orthogonal unmixing matrix.
         """
         derivative = np.sum(grad * direction)
         step = 1.0
 
         for _ in range(self.max_line_search_steps):
             new_unmixing = expm(step * direction) @ unmixing
-            new_objective, _ = self._objective_and_grad(
+            new_objective, new_grad = self._objective_and_grad(
                 new_unmixing,
                 X,
                 quantiles,
@@ -123,11 +123,11 @@ class LBFGSMixin:
                 new_objective
                 >= objective + self.armijo_min_increase * step * derivative
             ):
-                return step, new_objective, new_unmixing
+                return step, new_objective, new_grad, new_unmixing
 
             step *= 0.5
 
-        return 0.0, objective, unmixing
+        return 0.0, objective, grad, unmixing
 
     def _solve(
         self,
@@ -158,7 +158,7 @@ class LBFGSMixin:
                 direction = grad
                 history.clear()
 
-            step, new_objective, new_unmixing = self._line_search(
+            step, new_objective, new_grad, new_unmixing = self._line_search(
                 self.unmixing_,
                 X,
                 quantiles,
@@ -169,7 +169,6 @@ class LBFGSMixin:
             if step == 0.0:
                 break
 
-            _, new_grad = self._objective_and_grad(new_unmixing, X, quantiles)
             step_delta = step * direction
             grad_delta = grad - new_grad
             curvature = np.sum(step_delta * grad_delta)
