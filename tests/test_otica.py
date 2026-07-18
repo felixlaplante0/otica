@@ -166,7 +166,7 @@ def test_line_search_solver(monkeypatch):
         w_init=np.eye(2),
     )
     objective, grad = estimator._objective_and_grad(np.eye(2), X, quantiles)
-    step, new_objective, new_unmixing = estimator._line_search(
+    step, new_objective, new_grad, new_unmixing = estimator._line_search(
         np.eye(2),
         X,
         quantiles,
@@ -177,6 +177,7 @@ def test_line_search_solver(monkeypatch):
 
     assert step in {0.0, 1.0}
     assert np.isfinite(new_objective)
+    assert new_grad.shape == (2, 2)
     assert new_unmixing.shape == (2, 2)
 
     monkeypatch.setattr(estimator, "_direction", lambda grad, _history: -grad)
@@ -191,17 +192,20 @@ def test_line_search_solver(monkeypatch):
         return objective - 1.0, grad
 
     monkeypatch.setattr(estimator, "_objective_and_grad", decreasing_objective)
-    failed_step, failed_objective, failed_unmixing = estimator._line_search(
-        np.eye(2),
-        X,
-        quantiles,
-        objective,
-        grad,
-        grad,
+    failed_step, failed_objective, failed_grad, failed_unmixing = (
+        estimator._line_search(
+            np.eye(2),
+            X,
+            quantiles,
+            objective,
+            grad,
+            grad,
+        )
     )
 
     assert failed_step == 0.0
     assert failed_objective == objective
+    assert np.allclose(failed_grad, grad)
     assert np.allclose(failed_unmixing, np.eye(2))
 
 
@@ -225,7 +229,7 @@ def test_solver_stopping(monkeypatch):
     monkeypatch.setattr(
         estimator,
         "_line_search",
-        lambda *_: (0.0, 0.0, init_unmixing),
+        lambda *_: (0.0, 0.0, np.zeros_like(init_unmixing), init_unmixing),
     )
     with pytest.warns(ConvergenceWarning, match="`max_iter` or `tol`"):
         estimator._solve(
@@ -241,7 +245,7 @@ def test_solver_stopping(monkeypatch):
     monkeypatch.setattr(
         estimator,
         "_line_search",
-        lambda *_: (1.0, 1.0, init_unmixing),
+        lambda *_: (1.0, 1.0, np.zeros_like(init_unmixing), init_unmixing),
     )
     estimator._solve(
         X,
