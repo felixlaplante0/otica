@@ -1,6 +1,42 @@
 import numpy as np
 
 
+def _gen_quadrature(order: int, distribution: str) -> tuple[np.ndarray, np.ndarray]:
+    """Generates quadrature nodes and weights for a source distribution.
+
+    Args:
+        order (int): Quadrature order.
+        distribution (str): Source distribution name.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: Quadrature nodes and weights.
+    """
+    if distribution == "Gaussian":
+        nodes, weights = np.polynomial.hermite.hermgauss(order)
+        return np.sqrt(2.0) * nodes, weights / np.sqrt(np.pi)
+    if distribution == "Uniform":
+        nodes, weights = np.polynomial.legendre.leggauss(order)
+        return np.sqrt(3.0) * nodes, weights / 2.0
+
+    nodes, weights = np.polynomial.laguerre.laggauss(order)
+    if distribution == "Laplace":
+        return (
+            np.concatenate((-nodes, nodes)) / np.sqrt(2.0),
+            np.tile(weights, 2) / 2.0,
+        )
+    if distribution == "Exponential":
+        return nodes - 1.0, weights
+
+    uniform_nodes, uniform_weights = _gen_quadrature(order, "Uniform")
+    mixture_weight = 0.6239786746633258
+    return (
+        np.concatenate((uniform_nodes, nodes - 1.0)),
+        np.concatenate(
+            (mixture_weight * uniform_weights, (1.0 - mixture_weight) * weights)
+        ),
+    )
+
+
 def _gen_sources(n: int, d: int, distribution: str) -> np.ndarray:
     """Generates independent sources from a specified distribution.
 
@@ -72,27 +108,3 @@ def gen_gaussianity(
     mixing = np.random.normal(size=(d, d))
 
     return sources @ mixing.T, mixing
-
-
-def amari_index(unmixing: np.ndarray, mixing: np.ndarray) -> float:
-    """Calculates the Amari index between unmixing and mixing matrices.
-
-    Args:
-        unmixing (np.ndarray): Estimated unmixing matrix.
-        mixing (np.ndarray): True mixing matrix.
-
-    Returns:
-        float: Amari index, where zero indicates exact recovery up to ICA
-            indeterminacies.
-    """
-    product = np.abs(unmixing @ mixing)
-    d = product.shape[0]
-
-    return float(
-        (
-            np.sum(product / product.max(axis=1, keepdims=True))
-            + np.sum(product / product.max(axis=0, keepdims=True))
-            - 2 * d
-        )
-        / (2 * d * (d - 1))
-    )
