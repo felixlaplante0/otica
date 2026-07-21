@@ -167,6 +167,7 @@ def main():
                 linewidth=2.0,
             )
             score_axis.tick_params(axis="y", colors=color)
+            score_axis.ticklabel_format(axis="y", style="sci", scilimits=(-2, 2))
 
         axis.axvline(0.0, color="black", linestyle="--", linewidth=1.5)
         axis.set(
