@@ -163,7 +163,7 @@ def main():
                 oracle_score,
                 ":",
                 color=color,
-                label=f"{criterion} Oracle",
+                label=f"{criterion} oracle",
                 linewidth=2.0,
             )
             score_axis.tick_params(axis="y", colors=color)
