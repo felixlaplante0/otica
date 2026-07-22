@@ -103,6 +103,27 @@ plt.show()
 
 ---
 
+## 📊 Reproducing Results
+
+Clone the repository, create and activate a virtual environment, then install the exact package versions used for the paper:
+
+```bash
+python -m pip install -r scripts/requirements.txt
+```
+
+Run the experiment scripts from the repository root with the following options:
+
+```bash
+python scripts/criterion-rotation.py
+python scripts/statistical-performance.py --nd
+python scripts/statistical-performance.py --gaussianity
+python scripts/runtime-scaling.py
+```
+
+These commands reproduce `criterion-rotation.pdf`, `varying-nd-amari-index.pdf`, `gaussianity-amari-index.pdf`, and `runtime-scaling.pdf` in `figures/`. The paper settings (including random seed 42, sample sizes, dimensions, distributions, and 20 runs) are defined as constants near the top of each script.
+
+---
+
 ## 📖 Learn More
 
 For the mathematical formulation, configuration details, and API reference, visit [otica's documentation](https://felixlaplante0.github.io/otica).
