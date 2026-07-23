@@ -26,7 +26,6 @@ plt.rcParams.update(
 np.random.seed(42)
 ROOT = Path(__file__).resolve().parents[1]
 MODELS = {"OT-ICA": OTICA, "FastICA": FastICA}
-MODEL_ORDER = tuple(MODELS)
 N_RUNS = 20
 N_RANGE = (250, 500, 1000, 2000, 4000)
 D_RANGE = (5, 10, 15, 20, 30)
@@ -79,9 +78,9 @@ def main():
             x="Value",
             y="Runtime (seconds)",
             hue="Method",
-            hue_order=MODEL_ORDER,
+            hue_order=tuple(MODELS),
             style="Method",
-            style_order=MODEL_ORDER,
+            style_order=tuple(MODELS),
             markers=True,
             dashes=False,
             errorbar="sd",
