@@ -31,7 +31,7 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 # Set defaults
 np.random.seed(42)
 ROOT = Path(__file__).resolve().parents[1]
-MODELS = {"OT-ICA": OTICA, "FastICA": FastICA}
+MODELS = {"FastICA": FastICA, "OT-ICA": OTICA}
 DISTRIBUTIONS = ("Laplace", "Uniform", "Exponential", "Uniform-Exponential Mixture")
 N_RUNS = 20
 N_RANGE = (100, 250, 500, 1000, 1500)
