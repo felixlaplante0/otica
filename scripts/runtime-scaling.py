@@ -26,6 +26,7 @@ plt.rcParams.update(
 np.random.seed(42)
 ROOT = Path(__file__).resolve().parents[1]
 MODELS = {"OT-ICA": OTICA, "FastICA": FastICA}
+MARKERS = ("o", "s")
 N_RUNS = 20
 N_RANGE = (250, 500, 1000, 2000, 4000)
 D_RANGE = (5, 10, 15, 20, 30)
@@ -73,20 +74,28 @@ def main():
             ("d", f"d (dimension), n = {FIXED_N}", "Runtime scaling with dimension"),
         ),
     ):
-        sns.lineplot(
-            data=results[results["Sweep"] == sweep],
+        subset = results[results["Sweep"] == sweep]
+        values = subset["Value"].drop_duplicates()
+        sns.pointplot(
+            data=subset,
             x="Value",
             y="Runtime (seconds)",
             hue="Method",
-            hue_order=tuple(MODELS),
-            style="Method",
-            style_order=tuple(MODELS),
-            markers=True,
-            dashes=False,
+            dodge=0.25,
+            linestyles="-",
             errorbar="sd",
+            capsize=0.1,
             ax=axis,
             legend=axis is axes[0],
         )
+        lines = [line for line in axis.lines if len(line.get_xdata()) == len(values)]
+        for line, marker in zip(lines, MARKERS, strict=True):
+            line.set_marker(marker)
+        if axis is axes[0]:
+            for method, marker in zip(MODELS, MARKERS, strict=True):
+                next(
+                    line for line in axis.lines if line.get_label() == method
+                ).set_marker(marker)
         axis.set(xlabel=xlabel, ylabel="Runtime (seconds) ↓", title=title)
         if axis is axes[0]:
             axis.legend(loc="upper left")

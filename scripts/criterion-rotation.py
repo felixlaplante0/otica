@@ -139,7 +139,7 @@ def main():
         for criterion, score_axis, color, oracle_score in zip(
             ("log-cosh", "Wasserstein"),
             (axis, wasserstein_axis),
-            ("tab:blue", "tab:orange"),
+            ("tab:orange", "tab:blue"),
             oracle_scores,
             strict=True,
         ):
@@ -166,7 +166,6 @@ def main():
                 label=f"{criterion} oracle",
                 linewidth=2.0,
             )
-            score_axis.tick_params(axis="y", colors=color)
             score_axis.ticklabel_format(axis="y", style="sci", scilimits=(-2, 2))
 
         axis.axvline(0.0, color="black", linestyle="--", linewidth=1.5)

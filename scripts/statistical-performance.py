@@ -32,6 +32,7 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 np.random.seed(42)
 ROOT = Path(__file__).resolve().parents[1]
 MODELS = {"OT-ICA": OTICA, "FastICA": FastICA}
+MARKERS = ("o", "s")
 DISTRIBUTIONS = ("Laplace", "Uniform", "Exponential", "Uniform-Exponential Mixture")
 N_RUNS = 20
 N_RANGE = (100, 250, 500, 1000, 1500)
@@ -94,19 +95,27 @@ def gaussianity_results(distribution):
 
 
 def plot(axis, results, xlabel, title, legend):
+    values = results["Value"].drop_duplicates()
     sns.pointplot(
         data=results,
         x="Value",
         y="Amari index",
         hue="Method",
-        hue_order=tuple(MODELS),
-        linestyles="none",
         dodge=0.25,
+        linestyles="none",
         errorbar="sd",
         capsize=0.1,
         ax=axis,
         legend=legend,
     )
+    lines = [line for line in axis.lines if len(line.get_xdata()) == len(values)]
+    for line, marker in zip(lines, MARKERS, strict=True):
+        line.set_marker(marker)
+    if legend:
+        for method, marker in zip(MODELS, MARKERS, strict=True):
+            next(line for line in axis.lines if line.get_label() == method).set_marker(
+                marker
+            )
     axis.set(xlabel=xlabel, ylabel="Amari index ↓", title=title)
     if legend:
         axis.legend(loc="upper left")

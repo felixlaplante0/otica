@@ -122,6 +122,14 @@ python scripts/statistical-performance.py --gaussianity
 python scripts/runtime-scaling.py
 ```
 
+Alternatively, run all experiments sequentially on Windows, Linux, or macOS:
+
+```bash
+python run-all.py
+```
+
+The runner uses the active Python interpreter and stops if an experiment fails.
+
 These commands write `criterion-rotation.pdf`, `varying-nd-amari-index.pdf`, `gaussianity-amari-index.pdf`, and `runtime-scaling.pdf` to `figures/`. The paper settings (including random seed 42, sample sizes, dimensions, distributions, and 20 runs) are defined as constants near the top of each script.
 
 ---
