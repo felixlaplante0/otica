@@ -94,14 +94,11 @@ def gaussianity_results(distribution):
 
 
 def plot(axis, results, xlabel, title, legend):
-    sns.lineplot(
+    sns.barplot(
         data=results,
         x="Value",
         y="Amari index",
         hue="Method",
-        style="Method",
-        markers=True,
-        dashes=False,
         errorbar="sd",
         ax=axis,
         legend=legend,
