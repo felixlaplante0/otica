@@ -184,7 +184,14 @@ def main():
             if not line.get_label().startswith("_")
         ]
         if axis is axes[0]:
-            axis.legend(lines, [line.get_label() for line in lines], loc="upper left")
+            labels = (
+                "Wasserstein empirical",
+                "Wasserstein oracle",
+                "log-cosh empirical",
+                "log-cosh oracle",
+            )
+            lines.sort(key=lambda line: labels.index(line.get_label()))
+            axis.legend(lines, labels, loc="upper left")
         else:
             axis.get_legend().remove()
         wasserstein_axis.get_legend().remove()
