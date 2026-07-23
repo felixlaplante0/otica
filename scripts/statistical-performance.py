@@ -120,7 +120,7 @@ def main():
     args = parser.parse_args()
 
     if args.nd:
-        figure, axes = plt.subplots(2, 4, figsize=(28, 10), layout="constrained")
+        figure, axes = plt.subplots(2, 4, figsize=(26, 10), layout="constrained")
         figure.suptitle("Amari index with varying sample size and dimension")
         for column, distribution in enumerate(DISTRIBUTIONS):
             results = nd_results(distribution)
@@ -139,7 +139,7 @@ def main():
                 )
         output = ROOT / "figures" / "varying-nd-amari-index.pdf"
     else:
-        figure, axes = plt.subplots(1, 4, figsize=(28, 5), layout="constrained")
+        figure, axes = plt.subplots(1, 4, figsize=(26, 5), layout="constrained")
         figure.suptitle("Amari index as sources approach Gaussianity")
         for column, distribution in enumerate(DISTRIBUTIONS):
             results = gaussianity_results(distribution)
@@ -152,6 +152,7 @@ def main():
             )
         output = ROOT / "figures" / "gaussianity-amari-index.pdf"
 
+    (ROOT / "figures").mkdir(exist_ok=True)
     figure.savefig(output)
     plt.show()
 

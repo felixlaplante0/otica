@@ -131,7 +131,7 @@ def main():
     }
     results = empirical_results(angles, gaussian_expectation)
 
-    figure, axes = plt.subplots(1, 4, figsize=(28, 5), layout="constrained")
+    figure, axes = plt.subplots(1, 4, figsize=(26, 5), layout="constrained")
     degrees = np.rad2deg(angles)
     for axis, (distribution, oracle_scores) in zip(axes, oracles.items(), strict=True):
         title = distribution.replace(" Mixture", " mixture")
@@ -190,6 +190,7 @@ def main():
         wasserstein_axis.get_legend().remove()
 
     figure.suptitle("Objective values by rotation angle")
+    (ROOT / "figures").mkdir(exist_ok=True)
     figure.savefig(ROOT / "figures" / "criterion-rotation.pdf")
     plt.show()
 

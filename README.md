@@ -111,7 +111,9 @@ Clone the repository, create and activate a virtual environment, then install th
 python -m pip install -r scripts/requirements.txt
 ```
 
-Run the experiment scripts from the repository root with the following options:
+Keep the repository folder layout unchanged: do not move, rename, or flatten its folders, because the experiment scripts resolve paths relative to their file locations.
+
+Run the experiment scripts from the repository root:
 
 ```bash
 python scripts/criterion-rotation.py
@@ -120,7 +122,7 @@ python scripts/statistical-performance.py --gaussianity
 python scripts/runtime-scaling.py
 ```
 
-These commands reproduce `criterion-rotation.pdf`, `varying-nd-amari-index.pdf`, `gaussianity-amari-index.pdf`, and `runtime-scaling.pdf` in `figures/`. The paper settings (including random seed 42, sample sizes, dimensions, distributions, and 20 runs) are defined as constants near the top of each script.
+These commands write `criterion-rotation.pdf`, `varying-nd-amari-index.pdf`, `gaussianity-amari-index.pdf`, and `runtime-scaling.pdf` to `figures/`. The paper settings (including random seed 42, sample sizes, dimensions, distributions, and 20 runs) are defined as constants near the top of each script.
 
 ---
 
