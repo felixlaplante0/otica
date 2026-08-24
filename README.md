@@ -131,9 +131,3 @@ python run-all.py
 The runner uses the active Python interpreter and stops if an experiment fails.
 
 These commands write `criterion-rotation.pdf`, `varying-nd-amari-index.pdf`, `gaussianity-amari-index.pdf`, and `runtime-scaling.pdf` to `figures/`. The paper settings (including random seed 42, sample sizes, dimensions, distributions, and 20 runs) are defined as constants near the top of each script.
-
----
-
-## 📖 Learn More
-
-For the mathematical formulation, configuration details, and API reference, visit [otica's documentation](https://felixlaplante0.github.io/otica).
