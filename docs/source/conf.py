@@ -1,32 +1,21 @@
-"""Configures the OTICA Sphinx documentation."""
+"""Configure the OTICA Sphinx documentation."""
 
 # Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
-
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath("../../"))
-
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "otica"
 release = ""
 version = ""
-copyright = "2026, Felix Laplante"
+copyright = "2026, Félix Laplante"
 author = "Félix Laplante"
-
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.autosummary",
+    "myst_nb",
+    "sphinx_design",
 ]
 
 templates_path = ["_templates"]
@@ -41,8 +30,24 @@ add_module_names = False
 napoleon_use_ivar = True
 napoleon_attr_annotations = True
 
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
-html_theme = "furo"
+html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
+html_logo = "_static/otica-logo.svg"
+html_favicon = "_static/otica-logo.svg"
+html_css_files = ["custom.css"]
+html_title = "OTICA"
+nb_execution_mode = "off"
+html_theme_options = {
+    "navbar_align": "left",
+    "show_toc_level": 2,
+    "navigation_with_keys": True,
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/felixlaplante0/otica",
+            "icon": "fa-brands fa-github",
+            "type": "fontawesome",
+        },
+    ],
+}
+html_sidebars = {"**": []}

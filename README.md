@@ -1,6 +1,26 @@
-# 📊 Contrast-Free ICA
+<p align="center">
+  <img src="https://raw.githubusercontent.com/felixlaplante0/otica/main/docs/source/_static/otica-logo.svg" alt="OTICA logo" width="128">
+</p>
 
-[![codecov](https://codecov.io/gh/felixlaplante0/otica/graph/badge.svg)](https://codecov.io/gh/felixlaplante0/otica)
+<h1 align="center">OTICA</h1>
+
+<p align="center"><strong>Optimal Transport Independent Component Analysis.</strong><br>
+Contrast-free source separation for linear non-Gaussian mixtures.</p>
+
+<p align="center">
+  <a href="https://otica.readthedocs.io/en/latest/">Documentation</a> ·
+  <a href="https://pypi.org/project/otica/">PyPI</a> ·
+  <a href="https://github.com/felixlaplante0/otica/blob/main/examples/tutorial.ipynb">Tutorial notebook</a>
+</p>
+
+<p align="center">
+  <a href="https://pypi.org/project/otica/"><img src="https://img.shields.io/pypi/v/otica?logo=pypi&logoColor=white" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/otica/"><img src="https://img.shields.io/badge/python-3.11--3.14-blue?logo=python&logoColor=white" alt="Supported Python versions: 3.11–3.14"></a>
+  <a href="https://github.com/felixlaplante0/otica/actions/workflows/lint.yml"><img src="https://github.com/felixlaplante0/otica/actions/workflows/lint.yml/badge.svg" alt="Lint status"></a>
+  <a href="https://codecov.io/gh/felixlaplante0/otica"><img src="https://codecov.io/gh/felixlaplante0/otica/graph/badge.svg" alt="Coverage"></a>
+  <a href="https://otica.readthedocs.io/en/latest/"><img src="https://readthedocs.org/projects/otica/badge/?version=latest" alt="Documentation status"></a>
+  <a href="https://github.com/felixlaplante0/otica/blob/main/LICENSE"><img src="https://img.shields.io/github/license/felixlaplante0/otica" alt="License"></a>
+</p>
 
 **otica** is a Python package for linear independent component analysis (ICA) based on optimal transport. It recovers latent sources by maximizing their empirical squared 2-Wasserstein distances to the standard Gaussian, using a fixed non-Gaussianity criterion that requires no user-chosen contrast function or nonlinearity.
 
@@ -87,9 +107,11 @@ print("Best absolute correlation per source:", np.abs(best_correlations))
 
 fig, axes = plt.subplots(3, 2, sharex=True, figsize=(12, 6))
 for component in range(3):
-    axes[component, 0].plot(time[:500], sources[:500, component])
+    axes[component, 0].plot(
+        time[:500], sources[:500, component], color="#4292DC"
+    )
     axes[component, 1].plot(
-        time[:500], recovered_sources[:500, component], color="tab:orange"
+        time[:500], recovered_sources[:500, component], color="#FF8866"
     )
     axes[component, 0].set_ylabel(f"Source {component + 1}")
 
@@ -100,6 +122,9 @@ axes[-1, 1].set_xlabel("Time")
 fig.tight_layout()
 plt.show()
 ```
+
+For a complete, reproducible walkthrough, run the
+[pre-executed tutorial notebook](examples/tutorial.ipynb).
 
 ---
 

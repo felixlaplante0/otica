@@ -21,7 +21,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-docs = ["furo", "sphinx"]
+docs = ["myst-nb", "sphinx-design", "pydata-sphinx-theme"]
 test = ["pytest>=8", "pytest-cov>=5"]
 
 [build-system]

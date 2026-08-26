@@ -1,122 +1,88 @@
-Contrast-Free ICA
-=================
+OTICA
+=====
 
-**otica** is a Python package for linear independent component analysis (ICA) based on optimal transport. It recovers latent sources by maximizing their empirical squared 2-Wasserstein distances to the standard Gaussian, using a fixed non-Gaussianity criterion that requires no user-chosen contrast function or nonlinearity.
+.. raw:: html
 
-Features
---------
+   <section class="hero">
+     <img class="hero-logo" src="_static/otica-logo.svg" alt="OTICA logo">
+     <p class="eyebrow">INDEPENDENT COMPONENT ANALYSIS · OPTIMAL TRANSPORT</p>
+     <h1>Recover hidden signals from mixed observations.</h1>
+     <p class="hero-copy">OTICA finds independent non-Gaussian sources with an exact empirical Wasserstein objective and a scikit-learn-compatible API.</p>
+     <div class="hero-actions">
+       <a class="primary" href="quickstart.html">Get started</a>
+       <a href="https://github.com/felixlaplante0/otica">View on GitHub</a>
+     </div>
+   </section>
 
-- **Contrast-free source separation**: Uses the squared 2-Wasserstein distance to the standard Gaussian as a fixed non-Gaussianity criterion.
-- **Exact empirical objective**: Computes the one-dimensional Wasserstein criterion directly from ordered samples and Gaussian quantiles, without density estimation.
-- **Riemannian optimization**: Optimizes the whitened ICA objective on the orthogonal group with a Picard-style limited-memory BFGS method and Armijo backtracking.
-- **Dimension reduction**: Supports extraction of a specified number of components through principal-component whitening.
-- **Flexible initialization**: Accepts FastICA, random, or user-provided initial unmixing matrices through ``w_init``.
-- **scikit-learn integration**: Implements the standard transformer API, including ``fit``, ``transform``, ``fit_transform``, and ``inverse_transform``.
+.. raw:: html
 
-Method
-------
+   <div class="pypi-card">
+     <div><span class="pypi-kicker">OPEN SOURCE PYTHON PACKAGE</span><strong>Install OTICA in seconds</strong><p>Works with NumPy, scikit-learn, and standard ICA workflows.</p></div>
+     <a href="quickstart.html">Read the quick start</a>
+   </div>
 
-For observations :math:`X \in \mathbb{R}^{n \times d}`, the linear ICA model assumes
+Highlights
+----------
 
-.. math::
+.. grid:: 1 2 2 4
+   :gutter: 3
 
-   X = S A^\top,
+   .. grid-item-card:: Contrast-free objective
+      :class-card: feature-card
 
-where the columns of :math:`S` are mutually independent latent sources and :math:`A` is an invertible mixing matrix. The sources are identifiable only up to permutation, sign, and scale.
+      Measure non-Gaussianity with the squared one-dimensional Wasserstein distance to a standard Gaussian.
 
-Let :math:`Z \in \mathbb{R}^{d}` be the centered and whitened random vector. For a candidate orthogonal unmixing matrix :math:`W \in \mathbb{R}^{d \times d}`, the population Wasserstein objective is
+   .. grid-item-card:: Exact empirical scoring
+      :class-card: feature-card
 
-.. math::
+      Sort samples and match them with Gaussian rank quantiles without density estimation or a chosen contrast function.
 
-   F(W) = \sum_{k = 1}^{d} \mathcal{W}_2\left( \left( Z W^\top \right)_k, \mathcal{N}(0, 1) \right)^2, \quad W W^\top = I_d.
+   .. grid-item-card:: Riemannian optimization
+      :class-card: feature-card
 
-Given whitened observations :math:`Z^{(1)}, \ldots, Z^{(n)}` collected as the rows of :math:`Z \in \mathbb{R}^{n \times d}`, let :math:`Y = Z W^\top`. OTICA maximizes the empirical objective
+      Optimize the whitened ICA objective on the orthogonal group with limited-memory quasi-Newton updates.
 
-.. math::
+   .. grid-item-card:: Familiar API
+      :class-card: feature-card
 
-   \widehat{W}_n \in \operatorname*{\arg\max}_{W W^\top = I_d} \widehat{F}_n(W) = \sum_{k = 1}^{d} \mathcal{W}_2\left( \frac{1}{n} \sum_{i = 1}^{n} \delta_{Y_{ik}}, \mathcal{N}(0, 1) \right)^2.
+      Use ``fit``, ``transform``, ``fit_transform``, and ``inverse_transform`` with scikit-learn utilities.
 
-For each component :math:`k`, OTICA sorts the entries of the :math:`k`-th column independently as :math:`Y_{(1)k} \leq \cdots \leq Y_{(n)k}`. It evaluates each empirical Wasserstein distance exactly by matching :math:`Y_{(i)k}` with :math:`q_i`, the mean of the standard-normal quantile function over the :math:`i`-th equal-probability interval. Under the usual ICA assumptions, including mutually independent sources with at most one Gaussian component, the population objective identifies the sources up to the unavoidable ambiguities.
+Why OTICA?
+----------
 
-Installation
-------------
+Linear ICA seeks a representation :math:`X = SA^\top` whose latent components are mutually independent. OTICA centers and whitens the observations, then searches for an orthogonal unmixing matrix whose projected components are maximally non-Gaussian under a fixed Wasserstein criterion.
 
-Install the package from PyPI:
+The method avoids choosing a problem-specific contrast function. Its empirical objective is computed directly from sorted samples and standard-Gaussian rank statistics, making the score explicit and reproducible.
 
-.. code-block:: bash
-
-   python -m pip install otica
-
-Usage
+Learn
 -----
 
-The following example generates three independent non-Gaussian signals, mixes them linearly, and recovers them with ``OTICA``. Because ICA is identifiable only up to permutation and sign, recovery is evaluated using the best absolute correlation for each true source.
+.. grid:: 1 1 1 3
+   :gutter: 3
 
-.. code-block:: python
+   .. grid-item-card:: Quick start
+      :link: quickstart
+      :class-card: feature-card
 
-   import matplotlib.pyplot as plt
-   import numpy as np
-   from otica import OTICA
+      Install OTICA, fit a model, and understand the objective.
 
-   rng = np.random.default_rng(42)
-   n_samples = 5000
-   time = np.linspace(0.0, 8.0, n_samples)
+   .. grid-item-card:: Tutorial notebook
+      :link: tutorial
+      :class-card: feature-card
 
-   # Generate independent, non-Gaussian latent sources.
-   sources = np.column_stack(
-       [
-           rng.laplace(size=n_samples),
-           rng.uniform(-np.sqrt(3.0), np.sqrt(3.0), size=n_samples),
-           rng.standard_t(df=5, size=n_samples) * np.sqrt(3.0 / 5.0),
-       ]
-   )
+      Follow a complete synthetic source-separation example with executed outputs and plots.
 
-   # Mix the sources into the observed signals.
-   mixing = np.array(
-       [
-           [1.0, 0.5, -0.2],
-           [0.2, 1.0, 0.4],
-           [-0.4, 0.1, 1.0],
-       ]
-   )
-   X = sources @ mixing.T
+.. raw:: html
 
-   # Fit OTICA and recover the latent components.
-   model = OTICA(random_state=42)
-   estimated_sources = model.fit_transform(X)
+   <p><a class="tutorial-link" href="https://github.com/felixlaplante0/otica/blob/main/examples/tutorial.ipynb">Open the pre-executed tutorial notebook source on GitHub</a></p>
 
-   correlations = np.corrcoef(sources.T, estimated_sources.T)[:3, 3:]
-   best_indices = np.abs(correlations).argmax(axis=1)
-   best_correlations = correlations[np.arange(3), best_indices]
-   recovered_sources = estimated_sources[:, best_indices] * np.sign(best_correlations)
-   print("Best absolute correlation per source:", np.abs(best_correlations))
-
-   fig, axes = plt.subplots(3, 2, sharex=True, figsize=(12, 6))
-   for component in range(3):
-       axes[component, 0].plot(time[:500], sources[:500, component])
-       axes[component, 1].plot(
-           time[:500], recovered_sources[:500, component], color="tab:orange"
-       )
-       axes[component, 0].set_ylabel(f"Source {component + 1}")
-
-   axes[0, 0].set_title("True sources")
-   axes[0, 1].set_title("Recovered sources")
-   axes[-1, 0].set_xlabel("Time")
-   axes[-1, 1].set_xlabel("Time")
-   fig.tight_layout()
-   plt.show()
-
-Configuration
--------------
-
-The ``w_init`` parameter selects ``"fastica"`` or ``"random"`` initialization, or accepts a square array-like initial unmixing matrix whose dimensions match the number of fitted components. The L-BFGS iteration count, memory, stopping tolerance, Armijo line search, and random seed are estimator parameters. Scikit-learn utilities such as ``get_params``, ``set_params``, ``clone``, and pipelines therefore handle the complete configuration.
-
-The empirical objective is nonconvex and piecewise smooth because component ranks change at ties. Different initializations may reach different local optima, and the gradient need not vanish exactly at an order-cell boundary.
-
-API Reference
+API reference
 -------------
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
 
+   quickstart
+   tutorial
    modules
