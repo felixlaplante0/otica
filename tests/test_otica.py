@@ -170,9 +170,9 @@ def test_line_search_solver(monkeypatch):
         np.eye(2),
         X,
         quantiles,
-        objective,
-        grad,
-        grad,
+        objective=objective,
+        grad=grad,
+        direction=grad,
     )
 
     assert step in {0.0, 1.0}
@@ -197,9 +197,9 @@ def test_line_search_solver(monkeypatch):
             np.eye(2),
             X,
             quantiles,
-            objective,
-            grad,
-            grad,
+            objective=objective,
+            grad=grad,
+            direction=grad,
         )
     )
 
@@ -229,7 +229,12 @@ def test_solver_stopping(monkeypatch):
     monkeypatch.setattr(
         estimator,
         "_line_search",
-        lambda *_: (0.0, 0.0, np.zeros_like(init_unmixing), init_unmixing),
+        lambda *_args, **_kwargs: (
+            0.0,
+            0.0,
+            np.zeros_like(init_unmixing),
+            init_unmixing,
+        ),
     )
     with pytest.warns(ConvergenceWarning, match="`max_iter` or `tol`"):
         estimator._solve(
@@ -245,7 +250,12 @@ def test_solver_stopping(monkeypatch):
     monkeypatch.setattr(
         estimator,
         "_line_search",
-        lambda *_: (1.0, 1.0, np.zeros_like(init_unmixing), init_unmixing),
+        lambda *_args, **_kwargs: (
+            1.0,
+            1.0,
+            np.zeros_like(init_unmixing),
+            init_unmixing,
+        ),
     )
     estimator._solve(
         X,

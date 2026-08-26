@@ -90,6 +90,7 @@ class LBFGSMixin:
         unmixing: np.ndarray,
         X: np.ndarray,
         quantiles: np.ndarray,
+        *,
         objective: float,
         grad: np.ndarray,
         direction: np.ndarray,
@@ -106,7 +107,7 @@ class LBFGSMixin:
 
         Returns:
             tuple[float, float, np.ndarray, np.ndarray]: Step size, resulting objective
-                value, tangent gradient, and orthogonal unmixing matrix.
+            value, tangent gradient, and orthogonal unmixing matrix.
         """
         derivative = np.sum(grad * direction)
         step = 1.0
@@ -162,9 +163,9 @@ class LBFGSMixin:
                 self.unmixing_,
                 X,
                 quantiles,
-                objective,
-                grad,
-                direction,
+                objective=objective,
+                grad=grad,
+                direction=direction,
             )
             if step == 0.0:
                 break
