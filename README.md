@@ -10,7 +10,6 @@ Contrast-free source separation for linear non-Gaussian mixtures.</p>
 <p align="center">
   <a href="https://otica.readthedocs.io/en/latest/">Documentation</a> ·
   <a href="https://pypi.org/project/otica/">PyPI</a> ·
-  <a href="https://github.com/felixlaplante0/otica/blob/main/examples/tutorial.ipynb">Tutorial notebook</a>
 </p>
 
 <p align="center">
@@ -123,8 +122,6 @@ fig.tight_layout()
 plt.show()
 ```
 
-For a complete, reproducible walkthrough, run the
-[pre-executed tutorial notebook](examples/tutorial.ipynb).
 
 ---
 
