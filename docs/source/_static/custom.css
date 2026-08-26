@@ -1,4 +1,4 @@
-:root { --otica-accent: #ff8866; }
+:root { --otica-accent: #7cbbff; }
 .bd-page-width { max-width: 110rem; }
 .bd-article-container { max-width: none; }
 .hero { position: relative; overflow: hidden; margin: 1rem 0 2rem; padding: clamp(2rem, 6vw, 5rem); border-radius: 1.25rem; color: white; background: radial-gradient(circle at 80% 38%, #7cbbff 0, transparent 30%), linear-gradient(135deg, #183b4b, #573650); }
