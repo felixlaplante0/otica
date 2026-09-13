@@ -61,23 +61,16 @@ Learn
    :gutter: 3
 
    .. grid-item-card:: Quick start
-      :link: quickstart
+      :link: quickstart.html
       :class-card: feature-card
 
       Install OTICA, fit a model, and understand the objective.
 
    .. grid-item-card:: Tutorial notebook
-      :link: tutorial
+      :link: tutorial.html
       :class-card: feature-card
 
       Follow a complete synthetic source-separation example with executed outputs and plots.
-
-.. raw:: html
-
-   <p><a class="tutorial-link" href="https://github.com/felixlaplante0/otica/blob/main/examples/tutorial.ipynb">Open the pre-executed tutorial notebook source on GitHub</a></p>
-
-API reference
--------------
 
 .. toctree::
    :maxdepth: 2
