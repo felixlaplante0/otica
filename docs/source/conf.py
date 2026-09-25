@@ -1,11 +1,6 @@
 """Configure the OTICA Sphinx documentation."""
 
-# Configuration file for the Sphinx documentation builder.
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
-
 project = "otica"
-release = ""
-version = ""
 copyright = "2026, Félix Laplante"
 author = "Félix Laplante"
 
@@ -19,16 +14,11 @@ extensions = [
 ]
 
 templates_path = ["_templates"]
-exclude_patterns = []
 
 autodoc_member_order = "bysource"
 autodoc_typehints = "description"
-autodoc_typehints_format = "short"
-autodoc_inherit_docstrings = True
-autosummary_generate = True
 add_module_names = False
 napoleon_use_ivar = True
-napoleon_attr_annotations = True
 
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
